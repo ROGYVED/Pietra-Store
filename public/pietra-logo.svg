@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 150" role="img" aria-labelledby="title desc">
+  <title id="title">Pietra Calçados Femininos</title>
+  <desc id="desc">Logotipo tipográfico elegante da Pietra, em marrom profundo com um pequeno símbolo floral dourado.</desc>
+  <rect width="520" height="150" fill="#fcfaf7" fill-opacity="0"/>
+  <g fill="#b08c66" transform="translate(260 22)">
+    <path d="M0-13 C5-8 5-3 0 0 C-5-3-5-8 0-13Z"/><path d="M13 0 C8 5 3 5 0 0 C3-5 8-5 13 0Z"/><path d="M0 13 C-5 8-5 3 0 0 C5 3 5 8 0 13Z"/><path d="M-13 0 C-8-5-3-5 0 0 C-3 5-8 5-13 0Z"/><circle r="2.2" fill="#4b3024"/>
+  </g>
+  <text x="260" y="88" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="63" font-weight="400" letter-spacing="12" fill="#2d1c14">PIETRA</text>
+  <text x="260" y="119" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" letter-spacing="7" fill="#4b3024">CALÇADOS FEMININOS</text>
+</svg>

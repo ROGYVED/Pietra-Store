@@ -1,0 +1,514 @@
+[
+  {
+    "supplierId": "2493785",
+    "name": "Rasteirinha Premium - Preto",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011735-3.png?key=NTM3MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493785/rasteirinha-premium-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493781",
+    "name": "Rasteirinha Premium - Preto",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011737-3.jpeg?key=NzM3MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493781/rasteirinha-premium-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493780",
+    "name": "Rasteirinha Premium - Off White",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011739-3.jpeg?key=OTM3MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493780/rasteirinha-premium-off-white/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493777",
+    "name": "Rasteirinha Premium - Caf\u00e9",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011741-3.png?key=MTQ3MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493777/rasteirinha-premium-cafe/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493775",
+    "name": "Rasteirinha Premium - Dourado",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011745-3.png?key=NTQ3MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493775/rasteirinha-premium-dourado/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493770",
+    "name": "Rasteirinha Premium - Nude",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011751-3.jpeg?key=MTU3MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493770/rasteirinha-premium-nude/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493768",
+    "name": "Rasteirinha Luxury - Preto",
+    "supplierPriceCents": 2800,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011752-3.png?key=MjU3MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493768/rasteirinha-luxury-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493765",
+    "name": "Rasteirinha Luxury - Branco",
+    "supplierPriceCents": 2800,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011757-3.png?key=NzU3MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493765/rasteirinha-luxury-branco/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493761",
+    "name": "Rasteirinha Luxury -Marrom",
+    "supplierPriceCents": 2800,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011773-3.jpeg?key=Mzc3MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493761/rasteirinha-luxury-marrom/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493738",
+    "name": "Salto Bloco - Off White",
+    "supplierPriceCents": 3300,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011776-3.jpeg?key=Njc3MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493738/salto-bloco-off-white/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493735",
+    "name": "Salto Bloco - Preto",
+    "supplierPriceCents": 3300,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011780-3.jpeg?key=MDg3MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493735/salto-bloco-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493733",
+    "name": "Salto Bloco - Caf\u00e9",
+    "supplierPriceCents": 3300,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011782-3.jpeg?key=Mjg3MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493733/salto-bloco-cafe/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493727",
+    "name": "Salto Bloco - Marrom",
+    "supplierPriceCents": 3300,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011783-3.jpeg?key=Mzg3MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493727/salto-bloco-marrom/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493725",
+    "name": "Salto Bloco - Dourado",
+    "supplierPriceCents": 3300,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011789-3.jpeg?key=OTg3MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493725/salto-bloco-dourado/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493721",
+    "name": "Salto Bloco - Nude",
+    "supplierPriceCents": 3300,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011790-3.jpeg?key=MDk3MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493721/salto-bloco-nude/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493718",
+    "name": "Mule com Salto - Preto",
+    "supplierPriceCents": 3500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011796-3.jpeg?key=Njk3MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493718/mule-com-salto-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493714",
+    "name": "MULE - Caramelo",
+    "supplierPriceCents": 3000,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011804-3.jpeg?key=NDA4MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493714/mule-caramelo/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2493712",
+    "name": "MULE - Preto",
+    "supplierPriceCents": 3000,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4011809-3.jpeg?key=OTA4MTEwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2493712/mule-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2489315",
+    "name": "BOLSA - 9199 (SACOL\u00c3O 2 EM 1) - Rosa",
+    "supplierPriceCents": 7500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4003663-3.jpeg?key=MzY2MzAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2489315/bolsa-9199-sacolao-2-em-1-rosa/",
+    "category": "Bolsas"
+  },
+  {
+    "supplierId": "2489309",
+    "name": "BOLSA - 9199 (SACOL\u00c3O 2 EM 1) - Marrom",
+    "supplierPriceCents": 7500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4003659-3.jpeg?key=OTU2MzAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2489309/bolsa-9199-sacolao-2-em-1-marrom/",
+    "category": "Bolsas"
+  },
+  {
+    "supplierId": "2489306",
+    "name": "BOLSA - 9199 (SACOL\u00c3O 2 EM 1) - Caqui",
+    "supplierPriceCents": 7500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4003632-3.jpeg?key=MjM2MzAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2489306/bolsa-9199-sacolao-2-em-1-caqui/",
+    "category": "Bolsas"
+  },
+  {
+    "supplierId": "2489302",
+    "name": "BOLSA - 9199 (SACOL\u00c3O 2 EM 1) - Preto",
+    "supplierPriceCents": 7500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4003629-3.jpeg?key=OTI2MzAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2489302/bolsa-9199-sacolao-2-em-1-preto/",
+    "category": "Bolsas"
+  },
+  {
+    "supplierId": "2487811",
+    "name": "Rasteirinha Premium - Preto",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4002103-3.png?key=MzAxMjAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487811/rasteirinha-premium-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487733",
+    "name": "Rasteirinha Premium - Preto",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4002094-3.png?key=NDkwMjAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487733/rasteirinha-premium-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487729",
+    "name": "Rasteirinha Premium - off/marfim",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4002091-3.png?key=MTkwMjAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487729/rasteirinha-premium-offmarfim/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487727",
+    "name": "Rasteirinha Premium - Marrom",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4002958-3.jpeg?key=ODU5MjAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487727/rasteirinha-premium-marrom/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487723",
+    "name": "Rasteirinha Premium - Nude",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4002068-3.png?key=ODYwMjAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487723/rasteirinha-premium-nude/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487717",
+    "name": "Rasteirinha Premium - Rose",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4002063-3.png?key=MzYwMjAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487717/rasteirinha-premium-rose/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487702",
+    "name": "Rasteirinha Luxury - Branco",
+    "supplierPriceCents": 2800,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4002022-3.jpeg?key=MjIwMjAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487702/rasteirinha-luxury-branco/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487698",
+    "name": "Rasteirinha Luxury - Dourado",
+    "supplierPriceCents": 2800,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4002024-3.jpeg?key=NDIwMjAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487698/rasteirinha-luxury-dourado/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487688",
+    "name": "Rasteirinha Luxury - Marsala",
+    "supplierPriceCents": 2800,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4002027-3.jpeg?key=NzIwMjAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487688/rasteirinha-luxury-marsala/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487679",
+    "name": "Rasteirinha Luxury -",
+    "supplierPriceCents": 2800,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4002029-3.jpeg?key=OTIwMjAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487679/rasteirinha-luxury/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487661",
+    "name": "Salto Bloco - Preto",
+    "supplierPriceCents": 3300,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4001672-3.png?key=Mjc2MTAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487661/salto-bloco-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487654",
+    "name": "Salto Bloco - Marrom",
+    "supplierPriceCents": 3300,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4001678-3.png?key=ODc2MTAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487654/salto-bloco-marrom/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487651",
+    "name": "Salto Bloco - Nude",
+    "supplierPriceCents": 3300,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4001680-3.png?key=MDg2MTAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487651/salto-bloco-nude/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487648",
+    "name": "Salto Bloco - Nude",
+    "supplierPriceCents": 3300,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4001681-3.png?key=MTg2MTAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487648/salto-bloco-nude/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487643",
+    "name": "Salto Bloco - Caf\u00e9",
+    "supplierPriceCents": 3300,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4001684-3.png?key=NDg2MTAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487643/salto-bloco-cafe/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487642",
+    "name": "Salto Bloco - Dourado",
+    "supplierPriceCents": 3300,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4001691-3.png?key=MTk2MTAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487642/salto-bloco-dourado/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487618",
+    "name": "Sapatilha - Preto",
+    "supplierPriceCents": 3000,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4001671-3.png?key=MTc2MTAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487618/sapatilha-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487600",
+    "name": "MULE - Marrom",
+    "supplierPriceCents": 3000,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4002772-3.png?key=Mjc3MjAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487600/mule-marrom/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487588",
+    "name": "MULE - Cinza",
+    "supplierPriceCents": 3000,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4002773-3.jpeg?key=Mzc3MjAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487588/mule-cinza/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487544",
+    "name": "Mule com Salto - Nude",
+    "supplierPriceCents": 3500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4002770-3.jpeg?key=MDc3MjAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487544/mule-com-salto-nude/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487514",
+    "name": "Papete Gucci - Bege",
+    "supplierPriceCents": 9200,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4000962-3.jpeg?key=MjY5MDAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487514/papete-gucci-bege/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2487510",
+    "name": "Papete Gucci - Preto",
+    "supplierPriceCents": 9200,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/4000963-3.jpeg?key=MzY5MDAwNA==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2487510/papete-gucci-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2483133",
+    "name": "Rasteirinha Premium - Nude",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3994663-3.png?key=MzY2NDk5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2483133/rasteirinha-premium-nude/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2483132",
+    "name": "Rasteirinha Premium - Marrom",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3994672-3.png?key=Mjc2NDk5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2483132/rasteirinha-premium-marrom/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2483131",
+    "name": "Rasteirinha Premium - Marrom",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3994678-3.png?key=ODc2NDk5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2483131/rasteirinha-premium-marrom/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2483130",
+    "name": "Rasteirinha Premium - Dourado",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3994680-3.png?key=MDg2NDk5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2483130/rasteirinha-premium-dourado/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2483129",
+    "name": "Rasteirinha Premium - Preto",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3994682-3.png?key=Mjg2NDk5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2483129/rasteirinha-premium-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2483128",
+    "name": "Rasteirinha Premium - Off/Marrom",
+    "supplierPriceCents": 2500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3996141-3.png?key=MTQxNjk5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2483128/rasteirinha-premium-offmarrom/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2483118",
+    "name": "Rasteirinha Luxury - Dourado",
+    "supplierPriceCents": 2800,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3996971-3.jpeg?key=MTc5Njk5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2483118/rasteirinha-luxury-dourado/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2483116",
+    "name": "Rasteirinha Luxury - Marrom",
+    "supplierPriceCents": 2800,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3994497-3.png?key=Nzk0NDk5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2483116/rasteirinha-luxury-marrom/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2483115",
+    "name": "Rasteirinha Luxury - Dourado",
+    "supplierPriceCents": 2800,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3994481-3.png?key=MTg0NDk5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2483115/rasteirinha-luxury-dourado/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2483114",
+    "name": "Rasteirinha Luxury - Marrom",
+    "supplierPriceCents": 2800,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3994473-3.png?key=Mzc0NDk5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2483114/rasteirinha-luxury-marrom/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2483104",
+    "name": "Salto Bloco - Nude",
+    "supplierPriceCents": 3300,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3994499-3.png?key=OTk0NDk5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2483104/salto-bloco-nude/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2483101",
+    "name": "Salto Bloco - Preto",
+    "supplierPriceCents": 3300,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3994500-3.png?key=MDA1NDk5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2483101/salto-bloco-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2482502",
+    "name": "MULE - Preto",
+    "supplierPriceCents": 3000,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3996134-3.png?key=NDMxNjk5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2482502/mule-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2482501",
+    "name": "MULE - Preto",
+    "supplierPriceCents": 3000,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3994658-3.png?key=ODU2NDk5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2482501/mule-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2482497",
+    "name": "Mule com Salto - Preto",
+    "supplierPriceCents": 3500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3994648-3.png?key=ODQ2NDk5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2482497/mule-com-salto-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2476313",
+    "name": "Papete Ju - Dourado",
+    "supplierPriceCents": 4500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3988361-3.png?key=MTYzODg5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2476313/papete-ju-dourado/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2476312",
+    "name": "Papete Ju - Nude",
+    "supplierPriceCents": 4500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3988363-3.jpeg?key=MzYzODg5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2476312/papete-ju-nude/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2476310",
+    "name": "Papete Ju - Caf\u00e9",
+    "supplierPriceCents": 4500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3988364-3.jpeg?key=NDYzODg5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2476310/papete-ju-cafe/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2476309",
+    "name": "Papete Ju - Preto",
+    "supplierPriceCents": 4500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3988365-3.jpeg?key=NTYzODg5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2476309/papete-ju-preto/",
+    "category": "Cal\u00e7ados"
+  },
+  {
+    "supplierId": "2476308",
+    "name": "Papete Ju - Branco",
+    "supplierPriceCents": 4500,
+    "imageUrl": "https://cdn.meucatalogodigital.com/donnaemilyaracaju/3988783-3.png?key=Mzg3ODg5Mw==&img=1",
+    "supplierUrl": "https://donnaemilyaracaju.meucatalogodigital.com/produto/2476308/papete-ju-branco/",
+    "category": "Cal\u00e7ados"
+  }
+]

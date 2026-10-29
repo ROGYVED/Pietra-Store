@@ -1,0 +1,280 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  PROCESSING
+  SHIPPED
+  READY_FOR_PICKUP
+  COMPLETED
+  CANCELLED
+  REFUND_PENDING
+  REFUNDED
+}
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  EXPIRED
+  REFUNDED
+}
+enum FulfillmentType {
+  LOCAL_DELIVERY
+  NATIONAL_SHIPPING
+  PICKUP
+}
+enum InventoryMovementType {
+  RESTOCK
+  SALE
+  RESERVATION
+  RELEASE
+  ADJUSTMENT
+  RETURN
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("ADMIN")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  auditLogs    AuditLog[]
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  active      Boolean   @default(true)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id              String        @id @default(cuid())
+  name            String
+  slug            String        @unique
+  reference       String?       @unique
+  shortDescription String?
+  description     String        @default("")
+  categoryId      String?
+  category        Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  brand           String?
+  color           String?
+  material        String?
+  shoeType        String?
+  heelHeight      String?
+  closureType     String?
+  careInstructions String?
+  priceCents      Int
+  compareAtCents  Int?
+  costCents       Int?
+  weightGrams     Int           @default(0)
+  widthCm         Int           @default(0)
+  heightCm        Int           @default(0)
+  lengthCm        Int           @default(0)
+  status          ProductStatus @default(DRAFT)
+  featured        Boolean       @default(false)
+  tags            String[]      @default([])
+  images          ProductImage[]
+  variants        ProductVariant[]
+  orderItems      OrderItem[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  @@index([status, featured])
+  @@index([categoryId])
+  @@index([name])
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String   @default("")
+  position  Int      @default(0)
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  @@index([productId, position])
+}
+
+model ProductVariant {
+  id             String   @id @default(cuid())
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku            String   @unique
+  size           Int      // 0 represents a one-size-fits-all product.
+  color          String?
+  stockQuantity  Int      @default(0)
+  reservedQuantity Int    @default(0)
+  lowStockThreshold Int    @default(2)
+  active         Boolean  @default(true)
+  inventoryMovements InventoryMovement[]
+  orderItems     OrderItem[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  @@unique([productId, size, color])
+  @@index([productId, size])
+}
+
+model InventoryMovement {
+  id          String               @id @default(cuid())
+  variantId   String
+  variant     ProductVariant       @relation(fields: [variantId], references: [id])
+  type        InventoryMovementType
+  quantity    Int
+  note        String?
+  referenceId String?
+  createdAt   DateTime             @default(now())
+  @@index([variantId, createdAt])
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String
+  cpf       String?
+  orders    Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([email])
+  @@index([phone])
+}
+
+model Order {
+  id                String          @id @default(cuid())
+  code              String          @unique
+  customerId        String?
+  customer          Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerName      String
+  customerEmail     String?
+  customerPhone     String
+  shippingAddress   Json?
+  fulfillmentType   FulfillmentType
+  shippingName      String?
+  shippingCents     Int             @default(0)
+  subtotalCents     Int
+  discountCents     Int             @default(0)
+  totalCents        Int
+  couponCode        String?
+  status            OrderStatus     @default(PENDING_PAYMENT)
+  paymentStatus     PaymentStatus   @default(PENDING)
+  paymentProvider   String?
+  providerPaymentId String?
+  items             OrderItem[]
+  payments          Payment[]
+  events            OrderEvent[]
+  idempotencyKey    String?         @unique
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  @@index([status, createdAt])
+  @@index([customerPhone])
+}
+
+model OrderItem {
+  id              String         @id @default(cuid())
+  orderId         String
+  order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId       String?
+  product         Product?       @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variantId       String?
+  variant         ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  productName     String
+  productImage    String?
+  sku             String?
+  size            Int
+  color           String?
+  unitPriceCents  Int
+  quantity        Int
+  lineTotalCents  Int
+  lineCostCents   Int?
+  @@index([orderId])
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  orderId           String
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider          String
+  providerPaymentId String?
+  method            String
+  status            PaymentStatus @default(PENDING)
+  amountCents       Int
+  providerFeeCents  Int?
+  checkoutUrl       String?
+  pixCopyPaste      String?
+  pixQrCodeBase64   String?
+  expiresAt         DateTime?
+  rawStatus         String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  @@index([provider, providerPaymentId])
+}
+
+model OrderEvent {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  event     String
+  note      String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  @@index([orderId, createdAt])
+}
+
+model Coupon {
+  id                String   @id @default(cuid())
+  code              String   @unique
+  kind              String
+  value             Int
+  minimumCents      Int      @default(0)
+  maxUses           Int?
+  usesCount         Int      @default(0)
+  startsAt          DateTime?
+  expiresAt         DateTime?
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model StoreSettings {
+  id                    String   @id @default("main")
+  storeName             String   @default("Pietra")
+  whatsappNumber        String?
+  pickupAddress         String?
+  pickupInstructions    String?
+  localDeliveryRules    Json?
+  nationalShippingRules Json?
+  updatedAt             DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String    @id @default(cuid())
+  adminId   String?
+  admin     AdminUser? @relation(fields: [adminId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime  @default(now())
+  @@index([createdAt])
+}
