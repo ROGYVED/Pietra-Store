@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ImagePlus, LogOut, PackageSearch, RefreshCw, Search, Save, X } from 'lucide-react';
+import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, ImagePlus, LogOut, PackageSearch, Plus, RefreshCw, Search, Save, Trash2, X } from 'lucide-react';
 import AdminAnalytics from './analytics';
 import './admin.css';
 
@@ -26,7 +26,7 @@ type AdminProduct = {
   heightCm: number;
   lengthCm: number;
   category: { name: string } | null;
-  images: { url: string; alt: string; isPrimary: boolean }[];
+  images: { id: string; url: string; alt: string; isPrimary: boolean }[];
   variants: Variant[];
 };
 
@@ -49,6 +49,16 @@ export default function AdminPage() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
+  const [showNewProductForm, setShowNewProductForm] = useState(false);
+  const [newProductName, setNewProductName] = useState('');
+  const [newProductReference, setNewProductReference] = useState('');
+  const [newProductSku, setNewProductSku] = useState('');
+  const [newProductPrice, setNewProductPrice] = useState('');
+  const [newProductSize, setNewProductSize] = useState('0');
+  const [newProductStock, setNewProductStock] = useState('0');
+  const [newProductColor, setNewProductColor] = useState('');
+  const [newProductImages, setNewProductImages] = useState<{ file: File; url: string }[]>([]);
+  const [zoomedImage, setZoomedImage] = useState<{ url: string; alt: string } | null>(null);
 
   const categories = useMemo(
     () => [...new Set(products.map((product) => product.category?.name ?? 'Sem categoria'))].sort((a, b) => a.localeCompare(b, 'pt-BR')),
@@ -101,13 +111,204 @@ export default function AdminPage() {
   }, [loadProducts]);
 
   useEffect(() => {
-    if (!selectedProductId) return;
+    return () => newProductImages.forEach((image) => URL.revokeObjectURL(image.url));
+  }, [newProductImages]);
+
+  useEffect(() => {
+    if (!selectedProductId && !zoomedImage) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setSelectedProductId(null);
+      if (event.key === 'Escape') {
+        if (zoomedImage) setZoomedImage(null);
+        else setSelectedProductId(null);
+      }
     };
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [selectedProductId]);
+  }, [selectedProductId, zoomedImage]);
+
+  function chooseNewProductImages(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.currentTarget.files ?? []);
+    event.currentTarget.value = '';
+    if (files.length > 5) {
+      setError('Selecione no máximo 5 fotos para o produto.');
+      return;
+    }
+    if (files.some((file) => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+      setError('As fotos precisam ser PNG, JPEG ou WebP e ter até 5 MB cada.');
+      return;
+    }
+    setError('');
+    setNewProductImages(files.map((file) => ({ file, url: URL.createObjectURL(file) })));
+  }
+
+  async function createProduct(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const price = Number(newProductPrice.replace(',', '.'));
+    const size = Number(newProductSize);
+    const stockQuantity = Number(newProductStock);
+    if (!Number.isFinite(price) || price <= 0 || !Number.isInteger(size) || size < 0 || size > 43 ||
+      !Number.isInteger(stockQuantity) || stockQuantity < 0) {
+      setError('Confira o preço, o tamanho e a quantidade inicial do estoque.');
+      return;
+    }
+
+    setBusy(true);
+    setError('');
+    setNotice('');
+    let createdProductId: string | null = null;
+    let uploadedImages = 0;
+    try {
+      const response = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newProductName,
+          reference: newProductReference || undefined,
+          sku: newProductSku,
+          priceCents: Math.round(price * 100),
+          size,
+          stockQuantity,
+          color: newProductColor || undefined,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Não foi possível cadastrar o produto.');
+      createdProductId = result.product.id as string;
+
+      for (const { file } of newProductImages) {
+        const formData = new FormData();
+        formData.append('image', file, file.name);
+        const imageResponse = await fetch(`/api/admin/products/${createdProductId}/image`, {
+          method: 'POST',
+          body: formData,
+        });
+        const imageResult = await imageResponse.json();
+        if (!imageResponse.ok) throw new Error(imageResult.error || 'Não foi possível enviar uma das fotos.');
+        uploadedImages += 1;
+      }
+
+      setNotice(`Produto cadastrado${uploadedImages ? ` com ${uploadedImages} foto(s)` : ''}. Ele ficará como rascunho até ser publicado.`);
+      setShowNewProductForm(false);
+      setNewProductName('');
+      setNewProductReference('');
+      setNewProductSku('');
+      setNewProductPrice('');
+      setNewProductSize('0');
+      setNewProductStock('0');
+      setNewProductColor('');
+      setNewProductImages([]);
+      await loadProducts();
+      setSelectedProductId(createdProductId);
+    } catch (reason) {
+      const message = reason instanceof Error ? reason.message : 'Não foi possível cadastrar o produto.';
+      if (createdProductId) {
+        setNotice(`Produto cadastrado${uploadedImages ? ` com ${uploadedImages} foto(s)` : ''}.`);
+        setError(`O produto foi criado, mas uma foto não pôde ser enviada: ${message} Você poderá tentar novamente na edição do produto.`);
+        setShowNewProductForm(false);
+        setNewProductImages([]);
+        setNewProductName('');
+        setNewProductReference('');
+        setNewProductSku('');
+        setNewProductPrice('');
+        setNewProductSize('0');
+        setNewProductStock('0');
+        setNewProductColor('');
+        try {
+          await loadProducts();
+          setSelectedProductId(createdProductId);
+        } catch (loadError) {
+          setError(loadError instanceof Error ? loadError.message : message);
+        }
+      } else {
+        setError(message);
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function uploadProductImages(product: AdminProduct, event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.currentTarget.files ?? []);
+    event.currentTarget.value = '';
+    if (!files.length) return;
+    if (product.images.length + files.length > 5) {
+      setError(`Este produto pode ter até 5 fotos. Ainda é possível adicionar ${5 - product.images.length}.`);
+      return;
+    }
+    if (files.some((file) => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+      setError('As fotos precisam ser PNG, JPEG ou WebP e ter até 5 MB cada.');
+      return;
+    }
+
+    setBusy(true);
+    setError('');
+    setNotice('');
+    let uploaded = 0;
+    try {
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('image', file, file.name);
+        const response = await fetch(`/api/admin/products/${product.id}/image`, { method: 'POST', body: formData });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Não foi possível enviar as fotos.');
+        uploaded += 1;
+      }
+      setNotice(`${uploaded} foto(s) adicionada(s) ao produto.`);
+      await loadProducts();
+    } catch (reason) {
+      setError(`${uploaded ? `${uploaded} foto(s) adicionada(s). ` : ''}${reason instanceof Error ? reason.message : 'Não foi possível enviar as fotos.'}`);
+      try {
+        await loadProducts();
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : 'Não foi possível atualizar as fotos.');
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteProductImage(product: AdminProduct, imageId: string) {
+    if (!window.confirm('Deseja excluir esta foto do produto?')) return;
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const response = await fetch(`/api/admin/products/${product.id}/image`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageId }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Não foi possível excluir a foto.');
+      setNotice(result.storageCleanupFailed
+        ? 'Foto removida do produto. O arquivo não pôde ser removido do armazenamento.'
+        : 'Foto removida do produto.');
+      await loadProducts();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Não foi possível excluir a foto.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteProduct(product: AdminProduct) {
+    if (!window.confirm(`Excluir o produto "${product.name}"? Esta ação não pode ser desfeita. Os pedidos e o histórico de estoque serão preservados.`)) return;
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const response = await fetch(`/api/admin/products/${product.id}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Não foi possível excluir o produto.');
+      setSelectedProductId(null);
+      setNotice('Produto excluído. Os pedidos e o histórico de estoque foram preservados.');
+      await loadProducts();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Não foi possível excluir o produto.');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -328,10 +529,47 @@ export default function AdminPage() {
                   <p className="eyebrow">ORGANIZE SUA VITRINE</p>
                   <h2 id="estoque">Catálogo e estoque ({products.length})</h2>
                 </div>
-                <button className="text-link" type="button" onClick={() => loadProducts().catch((reason) => setError(reason.message))} disabled={busy}>
-                  <RefreshCw size={15} /> Atualizar
-                </button>
+                <div className="catalog-heading-actions">
+                  <button className="text-link" type="button" onClick={() => loadProducts().catch((reason) => setError(reason.message))} disabled={busy}>
+                    <RefreshCw size={15} /> Atualizar
+                  </button>
+                  <button className="button button-dark" type="button" onClick={() => { setShowNewProductForm(!showNewProductForm); setError(''); setNotice(''); }} disabled={busy}>
+                    <Plus size={16} /> Adicionar produto
+                  </button>
+                </div>
               </div>
+              {showNewProductForm && (
+                <form className="admin-form admin-new-product-form" onSubmit={createProduct}>
+                  <h3>Adicionar mercadoria ao estoque</h3>
+                  <div className="form-grid">
+                    <label>Nome do produto<input required minLength={2} maxLength={160} value={newProductName} onChange={(event) => setNewProductName(event.target.value)} /></label>
+                    <label>Referência (opcional)<input maxLength={80} value={newProductReference} onChange={(event) => setNewProductReference(event.target.value)} /></label>
+                    <label>SKU / código da variante<input required maxLength={100} value={newProductSku} onChange={(event) => setNewProductSku(event.target.value)} /></label>
+                    <label>Preço (R$)<input type="number" min="0.01" step="0.01" required value={newProductPrice} onChange={(event) => setNewProductPrice(event.target.value)} /></label>
+                    <label>Tamanho (0 para tamanho único)<input type="number" min="0" max="43" step="1" required value={newProductSize} onChange={(event) => setNewProductSize(event.target.value)} /></label>
+                    <label>Quantidade inicial no estoque<input type="number" min="0" step="1" required value={newProductStock} onChange={(event) => setNewProductStock(event.target.value)} /></label>
+                    <label>Cor (opcional)<input maxLength={80} value={newProductColor} onChange={(event) => setNewProductColor(event.target.value)} /></label>
+                    <label className="admin-photo-input">Fotos do produto (até 5)
+                      <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={chooseNewProductImages} />
+                      <small>PNG, JPEG ou WebP; até 5 MB por foto.</small>
+                    </label>
+                  </div>
+                  {!!newProductImages.length && (
+                    <div className="admin-photo-previews">
+                      {newProductImages.map(({ file, url }, index) => (
+                        <button className="admin-photo-preview" key={`${file.name}-${file.lastModified}-${index}`} type="button" onClick={() => setZoomedImage({ url, alt: file.name })} title="Ampliar foto">
+                          <img src={url} alt={file.name} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <p className="admin-form-hint">O produto será criado como rascunho. Depois, revise o estoque e as medidas e publique quando estiver pronto.</p>
+                  <div className="catalog-create-actions">
+                    <button className="text-link" type="button" onClick={() => { setShowNewProductForm(false); setNewProductImages([]); }} disabled={busy}>Cancelar</button>
+                    <button className="button button-dark" type="submit" disabled={busy}>{busy ? 'Cadastrando...' : 'Cadastrar mercadoria'}</button>
+                  </div>
+                </form>
+              )}
               <div className="catalog-toolbar">
                 <label className="catalog-search">
                   <Search size={17} />
@@ -432,10 +670,35 @@ export default function AdminPage() {
               {notice && <p className="saved-note" role="status">{notice}</p>}
               <div className="catalog-modal-product-summary">
                 {selectedProduct.images[0]?.url
-                  ? <img src={selectedProduct.images[0].url} alt={selectedProduct.images[0].alt || selectedProduct.name} />
+                  ? <button className="admin-photo-summary" type="button" onClick={() => setZoomedImage({ url: selectedProduct.images[0].url, alt: selectedProduct.images[0].alt || selectedProduct.name })} aria-label="Ampliar foto do produto">
+                    <img src={selectedProduct.images[0].url} alt={selectedProduct.images[0].alt || selectedProduct.name} />
+                  </button>
                   : <div className="admin-catalog-no-image"><PackageSearch size={27} />Sem foto</div>}
                 <p>Atualize o estoque real e as medidas. Um produto só aparece para clientes depois de publicado e com unidades disponíveis.</p>
               </div>
+              <section className="catalog-modal-section">
+                <div className="catalog-modal-section-heading"><h3>Fotos do produto</h3><span>{selectedProduct.images.length} de 5 fotos</span></div>
+                {selectedProduct.images.length > 0 && (
+                  <div className="admin-product-photos">
+                    {selectedProduct.images.map((image, index) => (
+                      <div className="admin-product-photo" key={image.id}>
+                        <button className="admin-photo-preview" type="button" onClick={() => setZoomedImage({ url: image.url, alt: image.alt || `${selectedProduct.name}, foto ${index + 1}` })} aria-label={`Ampliar foto ${index + 1}`}>
+                          <img src={image.url} alt={image.alt || `${selectedProduct.name}, foto ${index + 1}`} />
+                          {image.isPrimary && <span>Principal</span>}
+                        </button>
+                        <button className="admin-photo-delete" type="button" onClick={() => deleteProductImage(selectedProduct, image.id)} disabled={busy}>
+                          <Trash2 size={13} /> Excluir foto
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <label className={`catalog-image-action admin-add-photo${busy || selectedProduct.images.length >= 5 ? ' disabled' : ''}`}>
+                  <ImagePlus size={16} /> Adicionar fotos
+                  <input type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={busy || selectedProduct.images.length >= 5} onChange={(event) => uploadProductImages(selectedProduct, event)} />
+                </label>
+                <p className="admin-form-hint">PNG, JPEG ou WebP; até 5 MB por foto. Clique em uma foto para ampliá-la.</p>
+              </section>
               <section className="catalog-modal-section">
                 <div className="catalog-modal-section-heading"><h3>Estoque por tamanho</h3><span>Unidades disponíveis por variante</span></div>
                 <div className="stock-grid">
@@ -485,12 +748,21 @@ export default function AdminPage() {
                 <button className="catalog-image-action" type="button" onClick={() => importImage(selectedProduct)} disabled={busy || !selectedProduct.images[0]?.url.startsWith('https://cdn.meucatalogodigital.com/')}>
                   <ImagePlus size={16} /> Copiar imagem para Supabase
                 </button>
+                <button className="catalog-delete-product" type="button" onClick={() => deleteProduct(selectedProduct)} disabled={busy}>
+                  <Trash2 size={15} /> Excluir produto
+                </button>
                 <button className="button button-dark" type="button" onClick={() => toggleStatus(selectedProduct)} disabled={busy}>
                   {selectedProduct.status === 'ACTIVE' ? 'Retirar da loja' : 'Publicar produto'}
                 </button>
               </footer>
             </div>
           </section>
+        </div>
+      )}
+      {zoomedImage && (
+        <div className="admin-image-zoom" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setZoomedImage(null); }}>
+          <button type="button" onClick={() => setZoomedImage(null)} aria-label="Fechar foto ampliada"><X size={24} /></button>
+          <img src={zoomedImage.url} alt={zoomedImage.alt} />
         </div>
       )}
     </main>

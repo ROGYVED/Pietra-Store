@@ -137,8 +137,8 @@ model ProductVariant {
 
 model InventoryMovement {
   id          String               @id @default(cuid())
-  variantId   String
-  variant     ProductVariant       @relation(fields: [variantId], references: [id])
+  variantId   String?
+  variant     ProductVariant?      @relation(fields: [variantId], references: [id], onDelete: SetNull)
   type        InventoryMovementType
   quantity    Int
   note        String?

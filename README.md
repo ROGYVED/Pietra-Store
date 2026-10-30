@@ -32,7 +32,7 @@ Abra http://localhost:3000. O primeiro acesso administrativo fica em `/admin`. `
 
 `prisma/supplier-catalog.json` contém 64 anúncios capturados do catálogo público informado pela Pietra, com nome, imagem, categoria, preço “a partir de” e link de origem. O seed importa calçados e bolsas como rascunhos, com estoque zero. O preço sugerido é duas vezes o valor de origem (acréscimo de 100%); como o fornecedor confirma preços, tamanhos e disponibilidade pelo atendimento, confirme custo e condições antes de publicar.
 
-No painel, cadastre o estoque real por tamanho, informe peso e dimensões do pacote, copie as imagens para o Supabase Storage e só então publique. Tamanho `0` representa produto de tamanho único. O seed pode ser executado novamente: preserva estoque/status já administrados, mas atualiza o custo e o preço derivados do snapshot do fornecedor.
+No painel, use **Adicionar produto** para cadastrar mercadorias com SKU, preço, tamanho, estoque inicial e até cinco fotos PNG, JPEG ou WebP (5 MB por foto). Tamanho `0` representa produto de tamanho único. As fotos podem ser ampliadas e removidas na edição do produto; imagens do fornecedor também podem ser copiadas para o Supabase Storage. Produtos novos começam como rascunho. Antes de publicar, revise o estoque e informe o peso e as dimensões do pacote. A exclusão de um produto preserva pedidos e movimentos de estoque anteriores. O seed pode ser executado novamente: preserva estoque/status já administrados, mas atualiza o custo e o preço derivados do snapshot do fornecedor.
 
 ## Configuração das integrações
 

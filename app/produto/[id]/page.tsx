@@ -45,10 +45,11 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [size, setSize] = useState<number | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [zoom, setZoom] = useState(false);
   const [favorite, setFavorite] = useState(false);
   const [notice, setNotice] = useState('');
-  const image = product?.images[0];
+  const image = product?.images[selectedImageIndex] ?? product?.images[0];
   const variants = useMemo(() => product?.variants ?? [], [product]);
   const selectedVariant = variants.find((variant) => variant.size === size);
 
@@ -63,6 +64,7 @@ export default function ProductPage() {
       .then((loaded) => {
         if (active) {
           setProduct(loaded);
+          setSelectedImageIndex(0);
           setError('');
         }
       })
@@ -144,8 +146,8 @@ export default function ProductPage() {
                 <span><Search size={16} /> Clique para ampliar</span>
               </button>
               <p className="zoom-hint">Amplie a imagem para observar os detalhes do produto.</p>
-              {product.images.length > 1 && <div className="detail-thumbnails">{product.images.map((item) => (
-                <button className="thumbnail" key={item.url} onClick={() => setZoom(true)} aria-label={`Ampliar ${item.alt || product.name}`}>
+              {product.images.length > 1 && <div className="detail-thumbnails">{product.images.map((item, index) => (
+                <button className={`thumbnail${selectedImageIndex === index ? ' active' : ''}`} key={item.url} onClick={() => { setSelectedImageIndex(index); setZoom(true); }} aria-label={`Ampliar ${item.alt || product.name}`}>
                   <img src={item.url} alt={item.alt || product.name} />
                 </button>
               ))}</div>}
