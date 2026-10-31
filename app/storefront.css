@@ -12,6 +12,7 @@
 .products-heading h2{max-width:760px}
 .product-title-button{border:0;background:transparent;padding:0;text-align:left;color:inherit;cursor:pointer}
 .product-title-button:hover h3{color:#8a6547}
+.footer-credit a{color:#eee3d7;text-decoration:underline;text-underline-offset:2px}
 .empty-state{min-height:180px;background:#f5efe8;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:34px;text-align:center;color:var(--muted)}
 .empty-state p{margin:0}
 
