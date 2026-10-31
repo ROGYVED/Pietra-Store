@@ -4,7 +4,6 @@
 .category-image{height:clamp(240px,31vw,390px);position:relative;background:linear-gradient(145deg,#e9ddd0,#d4bdab)}
 .category-image-1{background:linear-gradient(145deg,#e6d9cd,#cbb29c)}
 .category-image img{mix-blend-mode:normal;object-fit:cover}
-.category-image-label{position:absolute;left:22px;bottom:18px;color:white;font-size:9px;letter-spacing:.2em;text-shadow:0 1px 9px rgba(0,0,0,.4)}
 .category-placeholder{position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.62);font:italic 180px var(--serif)}
 .category-info{padding:21px 23px 24px}
 .category-info h3{font-size:26px}

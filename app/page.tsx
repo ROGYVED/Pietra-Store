@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import './storefront.css';
 import {
-  ArrowDownRight, ArrowRight, Check, ChevronDown, Heart, Menu, MessageCircle,
+  ArrowRight, Check, ChevronDown, Heart, Menu, MessageCircle,
   Search, ShieldCheck, ShoppingBag, Truck, X
 } from 'lucide-react';
 
@@ -139,8 +139,6 @@ export default function Home() {
 
       <section className="hero wrap" aria-label="Apresentação Pietra">
         <div className="hero-copy"><p className="eyebrow">SEU ESTILO, SEUS MOMENTOS</p><h1>Beleza em<br /><em>cada escolha.</em></h1><p className="hero-description">Calçados e bolsas que acompanham você,<br className="desktop-break" /> em todas as fases da sua jornada.</p><a className="button button-dark" href="#categorias">Explore nossos nichos <ArrowRight size={16} /></a><span className="hero-note">Feito para você. Escolhido por você.</span></div>
-        <div className="hero-image"><div className="hero-image-overlay" /><div className="hero-side-note">COLEÇÃO ATEMPORAL <span>— 01 / PIETRA</span></div></div>
-        <div className="hero-stamp"><span>PIETRA</span><span>DESDE SEMPRE, COM VOCÊ</span><ArrowDownRight size={18} /></div>
       </section>
 
       <section id="categorias" className="category-section wrap section-pad">
@@ -149,7 +147,7 @@ export default function Home() {
           const image = products.find((product) => product.category === category)?.image;
           const count = products.filter((product) => product.category === category).length;
           return <button className={`category-card category-card-${index}`} key={category} onClick={() => openCategory(category)} aria-label={`Ver ${count} produtos de ${category}`}>
-            <div className={`category-image category-image-${index}`}>{image ? <img src={image} alt="" loading="lazy" /> : <span className="category-placeholder">{category === 'Bolsas' ? 'B' : 'P'}</span>}<span className="category-image-label">PIETRA · {String(index + 1).padStart(2, '0')}</span></div>
+            <div className={`category-image category-image-${index}`}>{image ? <img src={image} alt="" loading="lazy" /> : <span className="category-placeholder">{category === 'Bolsas' ? 'B' : 'P'}</span>}</div>
             <div className="category-info"><div><h3>{category}</h3><p>{category === 'Bolsas' ? 'Acompanhe seus momentos com estilo' : 'Conforto e estilo em cada passo'} · {count} {count === 1 ? 'modelo' : 'modelos'}</p></div><span className="round-arrow"><ArrowRight size={16} /></span></div>
           </button>;
         })}</div>
