@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { OrderStatus } from '@prisma/client';
 import { z } from 'zod';
 import { getAdminSession } from '@/lib/admin-auth';
+import { cancelPendingOrder } from '@/lib/admin-orders';
 import { prisma } from '@/lib/prisma';
 
 const schema = z.object({
@@ -44,6 +45,12 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         throw new Error('PAYMENT_REQUIRED');
       }
 
+      if (parsed.data.status === 'CANCELLED' && current.status === 'PENDING_PAYMENT') {
+        const cancelled = await cancelPendingOrder(tx, current, admin.email);
+        if (!cancelled) throw new Error('STATE_CHANGED');
+        return tx.order.findUniqueOrThrow({ where: { id }, include: { items: true } });
+      }
+
       const claimed = await tx.order.updateMany({
         where: { id, status: current.status, paymentStatus: current.paymentStatus },
         data: {
@@ -65,31 +72,6 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         },
         include: { items: true },
       });
-
-      if (parsed.data.status === 'CANCELLED' && current.status === 'PENDING_PAYMENT') {
-        for (const item of current.items) {
-          if (!item.variantId) continue;
-          const released = await tx.productVariant.updateMany({
-            where: { id: item.variantId, reservedQuantity: { gte: item.quantity } },
-            data: { reservedQuantity: { decrement: item.quantity } },
-          });
-          if (released.count) {
-            await tx.inventoryMovement.create({
-              data: {
-                variantId: item.variantId,
-                type: 'RELEASE',
-                quantity: item.quantity,
-                referenceId: current.id,
-                note: 'Reserva liberada ao cancelar pedido pendente',
-              },
-            });
-          }
-        }
-        await tx.payment.updateMany({
-          where: { orderId: current.id, status: 'PENDING' },
-          data: { status: 'CANCELLED', rawStatus: 'admin_cancelled' },
-        });
-      }
 
       await tx.auditLog.create({
         data: {

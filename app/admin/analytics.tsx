@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FileDown, RefreshCw, Search, TrendingUp } from 'lucide-react';
+import { Ban, FileDown, RefreshCw, Search, TrendingUp } from 'lucide-react';
 
 type Period = '7d' | '30d' | '90d' | 'all';
 type Summary = {
@@ -109,6 +109,8 @@ export default function AdminAnalytics() {
   const [status, setStatus] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [cancellationBusy, setCancellationBusy] = useState(false);
+  const [cancellationNotice, setCancellationNotice] = useState('');
 
   const loadAnalytics = useCallback(async () => {
     const response = await fetch(`/api/admin/analytics?period=${period}`, { cache: 'no-store' });
@@ -184,6 +186,57 @@ export default function AdminAnalytics() {
     link.download = `pietra-vendas-pagina-${page}.csv`;
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function cancelOrder(order: Order) {
+    if (!window.confirm(`Cancelar o pedido ${order.code}? A reserva de estoque será liberada, mas o registro do pedido será preservado.`)) return;
+    setCancellationBusy(true);
+    setError('');
+    setCancellationNotice('');
+    try {
+      const response = await fetch(`/api/admin/orders/${encodeURIComponent(order.id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'CANCELLED', note: 'Cancelado pelo painel administrativo.' }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Não foi possível cancelar o pedido.');
+      await refresh();
+      setCancellationNotice(`Pedido ${order.code} cancelado. A reserva de estoque foi liberada.`);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Não foi possível cancelar o pedido.');
+    } finally {
+      setCancellationBusy(false);
+    }
+  }
+
+  async function cancelAllPendingOrders() {
+    if (!window.confirm('Cancelar todos os pedidos que aguardam pagamento, inclusive os fora do período e da página atuais? O histórico será preservado e as reservas de estoque liberadas.')) return;
+    setCancellationBusy(true);
+    setError('');
+    setCancellationNotice('');
+    let cancelledTotal = 0;
+    let pendingCount = 0;
+    try {
+      for (let batch = 0; batch < 20; batch += 1) {
+        const response = await fetch('/api/admin/orders/cancel-pending', { method: 'POST' });
+        const result = await response.json() as { cancelledCount?: number; pendingCount?: number; error?: string };
+        if (!response.ok) throw new Error(result.error || 'Não foi possível cancelar os pedidos pendentes.');
+        cancelledTotal += result.cancelledCount ?? 0;
+        pendingCount = result.pendingCount ?? 0;
+        if (pendingCount === 0) break;
+        if (!result.cancelledCount) throw new Error('Os pedidos pendentes mudaram durante a operação. Atualize a lista e tente novamente.');
+      }
+      await refresh();
+      setCancellationNotice(pendingCount > 0
+        ? `${cancelledTotal} pedidos cancelados. Ainda restam ${pendingCount} pendentes; clique novamente para continuar.`
+        : `${cancelledTotal} pedidos pendentes cancelados. O histórico foi preservado e as reservas foram liberadas.`);
+    } catch (reason) {
+      await refresh();
+      setError(reason instanceof Error ? reason.message : 'Não foi possível cancelar os pedidos pendentes.');
+    } finally {
+      setCancellationBusy(false);
+    }
   }
 
   const summary = analytics?.summary;
@@ -293,8 +346,16 @@ export default function AdminAnalytics() {
         <div className="analytics-panel sales-panel">
           <div className="sales-toolbar">
             <div><h3>Pedidos e vendas</h3><p>Acompanhe cliente, itens, pagamento e entrega por pedido.</p></div>
-            <button type="button" className="export-button" onClick={exportSales} disabled={!orders.length}><FileDown size={16} /> Exportar página CSV</button>
+            <div className="sales-toolbar-actions">
+              {status === 'PENDING_PAYMENT' && (
+                <button type="button" className="cancel-pending-button" onClick={() => void cancelAllPendingOrders()} disabled={cancellationBusy || loading}>
+                  <Ban size={15} /> {cancellationBusy ? 'Cancelando...' : 'Cancelar todos os pendentes'}
+                </button>
+              )}
+              <button type="button" className="export-button" onClick={exportSales} disabled={!orders.length}><FileDown size={16} /> Exportar página CSV</button>
+            </div>
           </div>
+          {cancellationNotice && <p className="cancellation-notice" role="status">{cancellationNotice}</p>}
           <div className="sales-filters">
             <label className="sales-search"><Search size={16} /><input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Buscar por pedido, cliente ou telefone" /></label>
             <select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} aria-label="Filtrar por status">
@@ -336,6 +397,16 @@ export default function AdminAnalytics() {
                             ))}
                           </div>
                           <div className="sale-totals"><span>Produtos {money(order.subtotalCents)}</span><span>Frete {money(order.shippingCents)}</span><strong>Total {money(order.totalCents)}</strong></div>
+                          {order.status === 'PENDING_PAYMENT' && order.paymentStatus === 'PENDING' && (
+                            <button
+                              className="cancel-order-button"
+                              type="button"
+                              onClick={() => void cancelOrder(order)}
+                              disabled={cancellationBusy}
+                            >
+                              <Ban size={14} /> Cancelar este pedido
+                            </button>
+                          )}
                         </div>
                       </details>
                     </td>

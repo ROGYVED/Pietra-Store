@@ -74,7 +74,8 @@ Não habilite pagamentos reais até confirmar que o webhook atualiza o pedido e 
 - `POST /api/cron/expire-orders`: cancela checkouts vencidos e libera reservas. Agende a chamada com `Authorization: Bearer <CRON_SECRET>`.
 - `/admin`: painel com faturamento pago, pedidos pendentes, ticket médio, custos registrados, taxas do Mercado Pago recebidas no webhook, resultado estimado, evolução diária, mais vendidos, estoque baixo, consulta paginada de cada venda, pesquisa e exportação CSV da página; também inclui gestão de estoque, publicação, medidas, retirada e imagens.
 - `GET /api/admin/analytics?period=7d|30d|90d|all` e `GET /api/admin/orders?page=1&pageSize=25`: relatórios autenticados do painel.
-- `PATCH /api/admin/orders/:id`: atualização operacional de pedidos com autenticação administrativa.
+- `PATCH /api/admin/orders/:id`: atualização operacional e cancelamento autenticado de pedidos pendentes; cancelar libera estoque e preserva o histórico.
+- `POST /api/admin/orders/cancel-pending`: cancela em lotes todos os pedidos que aguardam pagamento, mesmo fora do período/página atual, com autenticação administrativa.
 
 Entrega local está bloqueada até que taxa e área atendida sejam definidas. Retirada fica disponível quando o endereço for cadastrado no painel.
 O status `REFUND_PENDING` serve apenas para acompanhamento: inicie o reembolso no Mercado Pago e confirme-o pelo webhook; a loja não dispara reembolsos automaticamente. O resultado do painel usa o custo gravado em cada novo item vendido e as taxas comunicadas pelo Mercado Pago no webhook; não inclui impostos, custo efetivo do frete, taxas não informadas pelo provedor nem despesas operacionais. Pedidos antigos sem custo/taxa registrados não podem compor resultado histórico confiável. O login administrativo ainda precisa de limitação de tentativas e de política de acesso adequada ao ambiente do cliente.
