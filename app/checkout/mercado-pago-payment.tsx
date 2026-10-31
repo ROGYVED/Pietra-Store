@@ -19,6 +19,7 @@ export default function MercadoPagoPayment({
   onPaymentResult,
 }: MercadoPagoPaymentProps) {
   const [initialized, setInitialized] = useState(false);
+  const [brickReady, setBrickReady] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -27,6 +28,14 @@ export default function MercadoPagoPayment({
     setInitialized(true);
   }, []);
 
+  useEffect(() => {
+    if (!initialized || brickReady || error) return;
+    const timeout = setTimeout(() => {
+      setError('O formulário do Mercado Pago demorou para carregar. Atualize a página e tente novamente.');
+    }, 20000);
+    return () => clearTimeout(timeout);
+  }, [brickReady, error, initialized]);
+
   if (!publicKey) {
     return <p className="admin-warning" role="alert">Pagamento indisponível: configure a Public Key do Mercado Pago na Vercel.</p>;
   }
@@ -34,6 +43,7 @@ export default function MercadoPagoPayment({
 
   return (
     <div className="mercado-pago-brick">
+      {!brickReady && !error && <p className="shipping-status" role="status">Carregando as formas de pagamento...</p>}
       {error && <p className="admin-warning" role="alert">{error}</p>}
       <Payment
         initialization={{ amount: amountCents / 100, payer: { email } }}
@@ -46,6 +56,7 @@ export default function MercadoPagoPayment({
             bankTransfer: 'all',
           },
         }}
+        onReady={() => setBrickReady(true)}
         onSubmit={async ({ formData }) => {
           setError('');
           const response = await fetch(`/api/orders/${encodeURIComponent(orderCode)}/payment`, {
@@ -62,7 +73,14 @@ export default function MercadoPagoPayment({
           onPaymentResult(result.payment.status);
           return result.payment;
         }}
-        onError={() => setError('O formulário de pagamento apresentou um erro. Confira os dados e tente novamente.')}
+        onError={(brickError) => {
+          console.error('Mercado Pago Payment Brick failed:', {
+            type: brickError.type,
+            cause: brickError.cause,
+            message: brickError.message,
+          });
+          setError('O formulário de pagamento apresentou um erro. Confira a configuração da Public Key e tente novamente.');
+        }}
       />
     </div>
   );
