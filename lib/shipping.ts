@@ -26,6 +26,17 @@ export function isAracajuShippingAddress(city: string | null | undefined, state:
   return normalizedCity === 'ARACAJU' && state?.trim().toUpperCase() === 'SE';
 }
 
+export async function lookupPostalCodeAddress(postalCode: string) {
+  const response = await fetch(`https://viacep.com.br/ws/${postalCode}/json/`, {
+    cache: 'no-store',
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!response.ok) throw new Error(`ViaCEP returned ${response.status}`);
+  const address = await response.json() as { localidade?: string; uf?: string; erro?: boolean | string };
+  if (address.erro) return null;
+  return { city: address.localidade ?? '', state: address.uf ?? '' };
+}
+
 function quoteSecret() {
   const value = process.env.SHIPPING_QUOTE_SECRET;
   if (!value || value.length < 32) {

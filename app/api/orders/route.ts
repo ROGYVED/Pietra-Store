@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { createMercadoPagoPreference } from '@/lib/mercado-pago';
-import { hashShippingItems, isAracajuShippingAddress, verifyShippingQuote } from '@/lib/shipping';
+import { hashShippingItems, isAracajuShippingAddress, lookupPostalCodeAddress, verifyShippingQuote } from '@/lib/shipping';
 
 const schema = z.object({
   customer: z.object({
@@ -94,40 +94,60 @@ export async function POST(request: Request) {
   let shippingQuoteItems: { variantId: string; quantity: number; unitPriceCents: number }[] = [];
   let signedItemsHash: string | null = null;
   if (data.fulfillmentType === 'NATIONAL_SHIPPING') {
-    if (!data.shippingQuoteToken || !data.address?.cep) {
-      return NextResponse.json({ error: 'Calcule e selecione uma opção de frete antes de continuar.' }, { status: 400 });
+    if (!data.address?.cep) {
+      return NextResponse.json({ error: 'Informe um CEP válido para calcular o frete.' }, { status: 400 });
     }
-    try {
-      const quote = await verifyShippingQuote(data.shippingQuoteToken);
-      const postalCode = data.address.cep.replace(/\D/g, '');
-      const variants = await prisma.productVariant.findMany({
-        where: { id: { in: data.items.map((item) => item.variantId) } },
-        select: { id: true, product: { select: { priceCents: true } } },
-      });
-      const prices = new Map(variants.map((variant) => [variant.id, variant.product.priceCents]));
-      shippingQuoteItems = data.items.map((item) => ({
-        ...item,
-        unitPriceCents: prices.get(item.variantId) ?? -1,
-      }));
-      if (
-        quote.postalCode !== postalCode ||
-        quote.itemsHash !== hashShippingItems(shippingQuoteItems, postalCode) ||
-        shippingQuoteItems.some((item) => item.unitPriceCents < 0) ||
-        (quote.freeShipping && (
-          quote.serviceId !== 'PIETRA_ARACAJU_FREE' ||
-          quote.priceCents !== 0 ||
-          !isAracajuShippingAddress(data.address.city, data.address.state)
-        ))
-      ) {
-        return NextResponse.json({ error: 'O frete não corresponde ao CEP ou aos itens atuais. Calcule-o novamente.' }, { status: 409 });
+    const postalCode = data.address.cep.replace(/\D/g, '');
+    if (!/^\d{8}$/.test(postalCode)) {
+      return NextResponse.json({ error: 'Informe um CEP válido com 8 dígitos.' }, { status: 400 });
+    }
+
+    if (!data.shippingQuoteToken) {
+      try {
+        const postalAddress = await lookupPostalCodeAddress(postalCode);
+        if (!postalAddress) {
+          return NextResponse.json({ error: 'CEP não encontrado. Confira o endereço e tente novamente.' }, { status: 400 });
+        }
+        if (!isAracajuShippingAddress(postalAddress.city, postalAddress.state)) {
+          return NextResponse.json({ error: 'Calcule e selecione uma opção de frete antes de continuar.' }, { status: 400 });
+        }
+        shippingName = 'Entrega grátis em Aracaju/SE';
+      } catch (error) {
+        console.error('Could not validate free shipping postal code:', error);
+        return NextResponse.json({ error: 'Não foi possível confirmar o CEP. Tente novamente.' }, { status: 502 });
       }
-      shippingCents = quote.priceCents;
-      shippingName = quote.serviceName;
-      signedItemsHash = quote.itemsHash;
-    } catch (error) {
-      return NextResponse.json({
-        error: error instanceof Error ? 'Cotação de frete inválida ou expirada. Calcule-a novamente.' : 'Cotação de frete inválida.',
-      }, { status: 400 });
+    } else {
+      try {
+        const quote = await verifyShippingQuote(data.shippingQuoteToken);
+        const variants = await prisma.productVariant.findMany({
+          where: { id: { in: data.items.map((item) => item.variantId) } },
+          select: { id: true, product: { select: { priceCents: true } } },
+        });
+        const prices = new Map(variants.map((variant) => [variant.id, variant.product.priceCents]));
+        shippingQuoteItems = data.items.map((item) => ({
+          ...item,
+          unitPriceCents: prices.get(item.variantId) ?? -1,
+        }));
+        if (
+          quote.postalCode !== postalCode ||
+          quote.itemsHash !== hashShippingItems(shippingQuoteItems, postalCode) ||
+          shippingQuoteItems.some((item) => item.unitPriceCents < 0) ||
+          (quote.freeShipping && (
+            quote.serviceId !== 'PIETRA_ARACAJU_FREE' ||
+            quote.priceCents !== 0 ||
+            !isAracajuShippingAddress(data.address.city, data.address.state)
+          ))
+        ) {
+          return NextResponse.json({ error: 'O frete não corresponde ao CEP ou aos itens atuais. Calcule-o novamente.' }, { status: 409 });
+        }
+        shippingCents = quote.priceCents;
+        shippingName = quote.serviceName;
+        signedItemsHash = quote.itemsHash;
+      } catch (error) {
+        return NextResponse.json({
+          error: error instanceof Error ? 'Cotação de frete inválida ou expirada. Calcule-a novamente.' : 'Cotação de frete inválida.',
+        }, { status: 400 });
+      }
     }
   }
 

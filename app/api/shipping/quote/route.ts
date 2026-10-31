@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { hashShippingItems, isAracajuShippingAddress, signShippingQuote } from '@/lib/shipping';
+import { hashShippingItems, isAracajuShippingAddress, lookupPostalCodeAddress, signShippingQuote } from '@/lib/shipping';
 
 const schema = z.object({
   postalCode: z.string().regex(/^\d{8}$/),
@@ -29,9 +29,6 @@ export async function POST(request: Request) {
   const originPostalCode = process.env.MELHORENVIO_ORIGIN_POSTAL_CODE?.replace(/\D/g, '');
   const supportEmail = process.env.MELHORENVIO_SUPPORT_EMAIL;
   const quoteSecret = process.env.SHIPPING_QUOTE_SECRET;
-  if (!quoteSecret || quoteSecret.length < 32) {
-    return NextResponse.json({ error: 'Configure SHIPPING_QUOTE_SECRET com pelo menos 32 caracteres.' }, { status: 503 });
-  }
 
   const variantIds = parsed.data.items.map((item) => item.variantId);
   const variants = await prisma.productVariant.findMany({
@@ -54,17 +51,12 @@ export async function POST(request: Request) {
   })), parsed.data.postalCode);
 
   try {
-    const addressResponse = await fetch(`https://viacep.com.br/ws/${parsed.data.postalCode}/json/`, {
-      cache: 'no-store',
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!addressResponse.ok) throw new Error(`ViaCEP returned ${addressResponse.status}`);
-    const address = await addressResponse.json() as { localidade?: string; uf?: string; erro?: boolean };
-    if (address.erro) {
+    const address = await lookupPostalCodeAddress(parsed.data.postalCode);
+    if (!address) {
       return NextResponse.json({ error: 'CEP não encontrado. Confira o endereço e tente novamente.' }, { status: 400 });
     }
 
-    if (isAracajuShippingAddress(address.localidade, address.uf)) {
+    if (isAracajuShippingAddress(address.city, address.state)) {
       const claims = {
         serviceId: 'PIETRA_ARACAJU_FREE',
         serviceName: 'Entrega grátis em Aracaju/SE',
@@ -74,7 +66,10 @@ export async function POST(request: Request) {
         itemsHash,
         freeShipping: true,
       };
-      return NextResponse.json({ quotes: [{ ...claims, token: await signShippingQuote(claims) }] });
+      const signedQuote = quoteSecret && quoteSecret.length >= 32
+        ? { token: await signShippingQuote(claims) }
+        : {};
+      return NextResponse.json({ quotes: [{ ...claims, ...signedQuote }] });
     }
   } catch (error) {
     console.error('CEP location lookup failed:', error);
@@ -83,6 +78,9 @@ export async function POST(request: Request) {
 
   if (!token || !originPostalCode || !supportEmail) {
     return NextResponse.json({ error: 'Configure o token OAuth, CEP de origem e e-mail de suporte do Melhor Envio.' }, { status: 503 });
+  }
+  if (!quoteSecret || quoteSecret.length < 32) {
+    return NextResponse.json({ error: 'Configure SHIPPING_QUOTE_SECRET com pelo menos 32 caracteres.' }, { status: 503 });
   }
   if (originPostalCode.length !== 8) {
     return NextResponse.json({ error: 'O CEP de origem do Melhor Envio precisa conter 8 dígitos.' }, { status: 503 });

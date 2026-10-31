@@ -7,13 +7,14 @@ import { ArrowLeft, CheckCircle2, LoaderCircle, MessageCircle, Truck } from 'luc
 type CartProduct = { id: string; name: string; price: number; image: string; tone: string; category: string };
 type CartItem = { product: CartProduct; variantId: string; size: number; quantity: number };
 type ShippingQuote = {
-  token: string;
+  token?: string;
   serviceId: string;
   serviceName: string;
   priceCents: number;
   deliveryDays: number;
   freeShipping?: boolean;
 };
+const quoteKey = (quote: ShippingQuote) => quote.token ?? quote.serviceId;
 type PickupOption = { address: string; instructions: string | null };
 type Fulfillment = 'NATIONAL_SHIPPING' | 'PICKUP';
 
@@ -62,7 +63,7 @@ export default function CheckoutPage() {
     () => items.reduce((sum, item) => sum + Math.round(item.product.price * 100) * item.quantity, 0),
     [items],
   );
-  const chosenQuote = quotes.find((quote) => quote.token === selectedQuote);
+  const chosenQuote = quotes.find((quote) => quoteKey(quote) === selectedQuote);
   const totalCents = subtotalCents + (fulfillment === 'NATIONAL_SHIPPING' ? chosenQuote?.priceCents ?? 0 : 0);
 
   const updateCustomer = (key: keyof typeof customer, value: string) =>
@@ -117,7 +118,7 @@ export default function CheckoutPage() {
       const availableQuotes = result.quotes as ShippingQuote[];
       if (!availableQuotes.length) throw new Error('Nenhuma opção de frete foi encontrada para este CEP.');
       setQuotes(availableQuotes);
-      setSelectedQuote(availableQuotes[0].token);
+      setSelectedQuote(quoteKey(availableQuotes[0]));
       setFreightStatus(availableQuotes[0].freeShipping
         ? 'Entrega grátis disponível para este CEP em Aracaju/SE.'
         : 'Frete calculado. Selecione a opção desejada.');
@@ -293,8 +294,8 @@ export default function CheckoutPage() {
                   {!!quotes.length && (
                     <div className="choice-stack">
                       {quotes.map((quote) => (
-                        <label key={quote.token}>
-                          <input type="radio" name="shippingQuote" checked={selectedQuote === quote.token} onChange={() => setSelectedQuote(quote.token)} />
+                        <label key={quoteKey(quote)}>
+                          <input type="radio" name="shippingQuote" checked={selectedQuote === quoteKey(quote)} onChange={() => setSelectedQuote(quoteKey(quote))} />
                           {quote.serviceName} · {money(quote.priceCents)}{quote.deliveryDays > 0 ? ` · até ${quote.deliveryDays} dias` : ''}
                         </label>
                       ))}
