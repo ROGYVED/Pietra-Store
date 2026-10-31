@@ -1,14 +1,13 @@
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { createMercadoPagoPreference } from '@/lib/mercado-pago';
 import { hashShippingItems, isAracajuShippingAddress, lookupPostalCodeAddress, verifyShippingQuote } from '@/lib/shipping';
 
 const schema = z.object({
   customer: z.object({
     name: z.string().trim().min(2).max(160),
-    email: z.string().email().optional().or(z.literal('')),
+    email: z.string().email(),
     phone: z.string().trim().min(8).max(30),
   }),
   fulfillmentType: z.enum(['LOCAL_DELIVERY', 'NATIONAL_SHIPPING', 'PICKUP']),
@@ -26,41 +25,8 @@ const schema = z.object({
     variantId: z.string().min(1),
     quantity: z.number().int().min(1).max(10),
   })).min(1).max(30),
-  idempotencyKey: z.string().min(12).max(100).optional(),
+  idempotencyKey: z.string().uuid().optional(),
 });
-
-function releaseOrderReservation(orderId: string, note: string) {
-  return prisma.$transaction(async (tx) => {
-    const order = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
-    if (!order || order.status === 'CANCELLED' || order.paymentStatus === 'APPROVED') return;
-
-    for (const item of order.items) {
-      if (!item.variantId) continue;
-      const released = await tx.productVariant.updateMany({
-        where: { id: item.variantId, reservedQuantity: { gte: item.quantity } },
-        data: { reservedQuantity: { decrement: item.quantity } },
-      });
-      if (released.count) {
-        await tx.inventoryMovement.create({
-          data: { variantId: item.variantId, type: 'RELEASE', quantity: item.quantity, referenceId: order.id, note },
-        });
-      }
-    }
-
-    await tx.payment.updateMany({
-      where: { orderId, status: 'PENDING' },
-      data: { status: 'CANCELLED', rawStatus: 'checkout_creation_failed' },
-    });
-    await tx.order.update({
-      where: { id: orderId },
-      data: {
-        status: 'CANCELLED',
-        paymentStatus: 'CANCELLED',
-        events: { create: { event: 'PAYMENT_CREATION_FAILED', note } },
-      },
-    });
-  });
-}
 
 export async function POST(request: Request) {
   const parsed = schema.safeParse(await request.json().catch(() => null));
@@ -151,21 +117,24 @@ export async function POST(request: Request) {
     }
   }
 
-  const key = data.idempotencyKey || randomBytes(16).toString('hex');
-  let orderId: string | null = null;
+  const key = data.idempotencyKey || randomUUID();
   try {
     const existing = await prisma.order.findUnique({
       where: { idempotencyKey: key },
       include: { items: true, payments: { orderBy: { createdAt: 'desc' }, take: 1 } },
     });
     if (existing) {
-      const checkoutUrl = existing.payments[0]?.checkoutUrl;
-      if (checkoutUrl && existing.status === 'PENDING_PAYMENT') {
-        return NextResponse.json({ order: existing, payment: { checkoutUrl }, reused: true });
+      if (existing.payments[0] && existing.status === 'PENDING_PAYMENT') {
+        return NextResponse.json({
+          order: existing,
+          payment: { status: 'PENDING', expiresAt: existing.payments[0].expiresAt },
+          reused: true,
+        });
       }
       return NextResponse.json({ error: 'Esta tentativa de pedido já foi processada. Atualize a sacola e tente novamente.' }, { status: 409 });
     }
 
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
     const order = await prisma.$transaction(async (tx) => {
       const lines: Array<{
         variantId: string;
@@ -246,6 +215,16 @@ export async function POST(request: Request) {
           subtotalCents,
           totalCents: subtotalCents + shippingCents,
           items: { create: lines },
+          payments: {
+            create: {
+              provider: 'mercadopago',
+              method: 'checkout_bricks',
+              status: 'PENDING',
+              amountCents: subtotalCents + shippingCents,
+              expiresAt,
+              rawStatus: 'awaiting_payment_submission',
+            },
+          },
           events: { create: { event: 'ORDER_CREATED', note: 'Pedido criado; aguardando pagamento pelo Mercado Pago.' } },
         },
         include: { items: true },
@@ -257,60 +236,13 @@ export async function POST(request: Request) {
       }
       return created;
     }, { isolationLevel: 'Serializable' });
-    orderId = order.id;
-
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
-    const preference = await createMercadoPagoPreference({
-      orderId: order.id,
-      orderCode: order.code,
-      email: order.customerEmail,
-      items: order.items.map((item) => ({
-        id: item.variantId ?? item.sku ?? item.id,
-        title: `${item.productName}${item.size ? ` - tamanho ${item.size}` : ''}`,
-        quantity: item.quantity,
-        unitPriceCents: item.unitPriceCents,
-      })),
-      shippingCents: order.shippingCents,
-      shippingName: order.shippingName,
-      expiresAt,
-    }, baseUrl, accessToken, key);
-
-    const sandbox = accessToken.startsWith('TEST-');
-    const checkoutUrl = sandbox ? preference.sandboxCheckoutUrl ?? preference.checkoutUrl : preference.checkoutUrl;
-    const savedOrder = await prisma.$transaction(async (tx) => {
-      await tx.payment.create({
-        data: {
-          orderId: order.id,
-          provider: 'mercadopago',
-          providerPaymentId: preference.providerPaymentId,
-          method: 'checkout_pro',
-          status: 'PENDING',
-          amountCents: order.totalCents,
-          checkoutUrl,
-          expiresAt,
-          rawStatus: 'preference_created',
-        },
-      });
-      return tx.order.update({
-        where: { id: order.id },
-        data: { paymentProvider: 'mercadopago', providerPaymentId: preference.providerPaymentId },
-        include: { items: true },
-      });
-    });
 
     return NextResponse.json({
-      order: savedOrder,
-      payment: { status: 'PENDING', checkoutUrl, expiresAt },
+      order,
+      payment: { status: 'PENDING', expiresAt },
     }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
-    if (orderId) {
-      try {
-        await releaseOrderReservation(orderId, 'Reserva liberada porque não foi possível iniciar o pagamento.');
-      } catch (releaseError) {
-        console.error('Could not release reservation after payment setup failure:', releaseError);
-      }
-    }
     if (message === 'PRODUCT_UNAVAILABLE') return NextResponse.json({ error: 'Um produto não está mais disponível.' }, { status: 409 });
     if (message.startsWith('STOCK:')) return NextResponse.json({ error: `Estoque insuficiente para ${message.slice(6)}.` }, { status: 409 });
     if (message === 'SHIPPING_QUOTE_MISMATCH') return NextResponse.json({ error: 'O preço do produto mudou. Calcule o frete novamente.' }, { status: 409 });

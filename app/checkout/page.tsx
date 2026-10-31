@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, CheckCircle2, LoaderCircle, MessageCircle, Truck } from 'lucide-react';
+import MercadoPagoPayment from './mercado-pago-payment';
 
 type CartProduct = { id: string; name: string; price: number; image: string; tone: string; category: string };
 type CartItem = { product: CartProduct; variantId: string; size: number; quantity: number };
@@ -22,6 +23,7 @@ const money = (cents: number) =>
   (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const emptyAddress = { cep: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' };
 const whatsappNumber = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '').replace(/\D/g, '');
+const mercadoPagoPublicKey = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
 
 export default function CheckoutPage() {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -38,6 +40,8 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState(emptyAddress);
   const [idempotencyKey, setIdempotencyKey] = useState('');
   const [submittedOrder, setSubmittedOrder] = useState('');
+  const [submittedTotalCents, setSubmittedTotalCents] = useState<number | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState('');
   const [pickup, setPickup] = useState<PickupOption | null>(null);
   const quoteRequestId = useRef(0);
 
@@ -188,9 +192,45 @@ export default function CheckoutPage() {
     return () => clearTimeout(timeout);
   }, [address.cep, calculateFreight, fulfillment, items.length, postalCode.length, ready]);
 
+  useEffect(() => {
+    if (!submittedOrder) return;
+    let active = true;
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const loadStatus = async () => {
+      try {
+        const response = await fetch(`/api/orders/${encodeURIComponent(submittedOrder)}`, { cache: 'no-store' });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Não foi possível consultar o pagamento.');
+        if (!active) return;
+        const status = result.order.paymentStatus as string;
+        setPaymentStatus(status);
+        if (status === 'APPROVED') {
+          localStorage.removeItem('pietra-cart');
+          window.dispatchEvent(new Event('pietra-cart-updated'));
+        }
+        if (['APPROVED', 'CANCELLED', 'EXPIRED', 'REJECTED'].includes(status) && timer) {
+          clearInterval(timer);
+          timer = undefined;
+        }
+      } catch {
+        if (active) setPaymentStatus('PENDING');
+      }
+    };
+    void loadStatus();
+    timer = setInterval(() => { void loadStatus(); }, 6000);
+    return () => {
+      active = false;
+      if (timer) clearInterval(timer);
+    };
+  }, [submittedOrder]);
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
+    if (!mercadoPagoPublicKey) {
+      setError('Pagamento indisponível: configure a Public Key do Mercado Pago na Vercel.');
+      return;
+    }
     if (!items.length) {
       setError('Sua sacola está vazia.');
       return;
@@ -220,10 +260,8 @@ export default function CheckoutPage() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Não foi possível iniciar o pagamento.');
-      const checkoutUrl = result.payment?.checkoutUrl as string | undefined;
-      if (!checkoutUrl) throw new Error('O pagamento foi criado sem uma URL de checkout.');
       setSubmittedOrder(result.order.code);
-      window.location.assign(checkoutUrl);
+      setSubmittedTotalCents(result.order.totalCents);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Não foi possível iniciar o pagamento.');
       setSubmitBusy(false);
@@ -248,12 +286,41 @@ export default function CheckoutPage() {
             <h2>Sua sacola está vazia</h2>
             <Link href="/#colecao" className="button button-dark">Escolher produtos</Link>
           </section>
-        ) : submittedOrder ? (
-          <section className="checkout-success">
-            <CheckCircle2 size={44} />
-            <h2>Pedido {submittedOrder} criado</h2>
-            <p>Estamos redirecionando você ao Mercado Pago para escolher Pix ou cartão.</p>
-            {orderWhatsApp && <a className="button button-dark" href={orderWhatsApp} target="_blank" rel="noreferrer"><MessageCircle size={16} /> Falar com a Pietra</a>}
+        ) : submittedOrder && submittedTotalCents !== null ? (
+          <section className="checkout-layout">
+            <section className="checkout-form">
+              <h2>Pedido {submittedOrder}</h2>
+              {paymentStatus === 'APPROVED' ? (
+                <p className="shipping-status" role="status"><CheckCircle2 size={18} /> Pagamento aprovado! Seu pedido está confirmado.</p>
+              ) : ['CANCELLED', 'EXPIRED', 'REJECTED'].includes(paymentStatus) ? (
+                <>
+                  <p className="admin-warning" role="alert">Este pagamento não foi aprovado e o pedido foi encerrado. Volte à sacola para iniciar uma nova tentativa.</p>
+                  <Link href="/sacola" className="button button-dark">Voltar à sacola</Link>
+                </>
+              ) : (
+                <>
+                  <p className="safe-note">Escolha a forma de pagamento abaixo. O pagamento acontece aqui mesmo, na loja Pietra.</p>
+                  <MercadoPagoPayment
+                    orderCode={submittedOrder}
+                    amountCents={submittedTotalCents}
+                    email={customer.email}
+                    onPaymentResult={setPaymentStatus}
+                  />
+                  {paymentStatus && <p className="shipping-status" role="status">Pagamento enviado. Aguardando confirmação do Mercado Pago...</p>}
+                </>
+              )}
+              {orderWhatsApp && <a className="button button-outline" href={orderWhatsApp} target="_blank" rel="noreferrer"><MessageCircle size={16} /> Falar com a Pietra</a>}
+            </section>
+            <aside className="cart-summary">
+              <h2>Seu pedido</h2>
+              {items.map((item) => (
+                <div className="checkout-item" key={item.variantId}>
+                  <span>{item.quantity}× {item.product.name} · {item.size === 0 ? 'Único' : `nº ${item.size}`}</span>
+                  <strong>{money(Math.round(item.product.price * 100) * item.quantity)}</strong>
+                </div>
+              ))}
+              <div><span>Total confirmado</span><strong>{money(submittedTotalCents)}</strong></div>
+            </aside>
           </section>
         ) : (
           <form className="checkout-layout" onSubmit={submit}>
@@ -305,7 +372,7 @@ export default function CheckoutPage() {
               )}
 
               <h2>Pagamento</h2>
-              <p className="safe-note">O pagamento seguro será feito no Mercado Pago. Pix e cartão serão exibidos conforme sua conta.</p>
+              <p className="safe-note">O pagamento será processado com segurança pelo Mercado Pago, sem sair da loja Pietra.</p>
               {error && <p className="admin-warning" role="alert">{error}</p>}
               <button type="submit" className="button button-dark checkout-button" disabled={submitBusy}>
                 {submitBusy ? <LoaderCircle size={16} /> : null} Continuar para pagamento

@@ -38,7 +38,8 @@ No painel, use **Adicionar produto** para cadastrar mercadorias com SKU, preço,
 
 Preencha no ambiente do servidor, nunca no frontend:
 
-- `MERCADOPAGO_ACCESS_TOKEN` e `MERCADOPAGO_WEBHOOK_SECRET`: token e segredo de webhook da conta Mercado Pago. Configure `/api/payments/mercadopago/webhook` como notificação de pagamentos.
+- `MERCADOPAGO_ACCESS_TOKEN` e `MERCADOPAGO_WEBHOOK_SECRET`: token privado e segredo de webhook da aplicação Mercado Pago. Configure `/api/payments/mercadopago/webhook` como notificação de pagamentos.
+- `NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY`: Public Key da mesma aplicação e do mesmo ambiente do Access Token. É usada pelo Payment Brick no navegador; não é segredo.
 - `MELHORENVIO_TOKEN`, `MELHORENVIO_ENV`, `MELHORENVIO_ORIGIN_POSTAL_CODE`, `MELHORENVIO_SERVICE_IDS` e `MELHORENVIO_SUPPORT_EMAIL`: token OAuth da conta Pietra, ambiente (`sandbox` para testes ou `production`), CEP de origem cadastrado, IDs de serviços autorizados (opcional; vazio usa os serviços liberados na conta) e e-mail de suporte informado no User-Agent exigido pela API. O token deve ser emitido/autorizado na conta do Melhor Envio e renovado conforme as regras do provedor; rotação automática não está implementada.
 - `SHIPPING_QUOTE_SECRET`: segredo aleatório de 32 caracteres ou mais usado para assinar cotações temporárias.
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` e `SUPABASE_STORAGE_BUCKET`: armazenamento de imagens. O bucket deve estar configurado conforme o modo de acesso às imagens públicas da loja.
@@ -46,17 +47,18 @@ Preencha no ambiente do servidor, nunca no frontend:
 - `CRON_SECRET`: segredo para proteger a rotina de expiração de checkout.
 - `NEXT_PUBLIC_WHATSAPP_NUMBER`: contato comercial público da Pietra.
 
-Configure variáveis equivalentes na hospedagem. A chave `SUPABASE_SERVICE_ROLE_KEY` e todas as credenciais de pagamento/entrega são privadas e jamais devem usar prefixo `NEXT_PUBLIC_`.
+Configure variáveis equivalentes na hospedagem. A chave `SUPABASE_SERVICE_ROLE_KEY`, o Access Token do Mercado Pago e as credenciais de entrega são privadas e jamais devem usar prefixo `NEXT_PUBLIC_`. Apenas a Public Key do Mercado Pago pode ter esse prefixo.
 
-### Ativação do Checkout Pro
+### Ativação do Payment Brick
 
-O Checkout Pro é a opção recomendada para esta loja: o cliente escolhe Pix ou cartão na página segura do Mercado Pago, sem a Pietra receber dados de cartão. O servidor já cria uma preferência por pedido, reserva o estoque, redireciona o cliente e confirma o pagamento consultando o Mercado Pago após validar a assinatura do webhook.
+O Payment Brick mantém os campos de pagamento dentro do checkout da Pietra. O Brick coleta os dados de pagamento, e o servidor cria a cobrança diretamente na API do Mercado Pago; o Access Token nunca vai ao navegador. A confirmação definitiva continua sendo feita pelo webhook assinado.
 
-1. No painel de desenvolvedores do Mercado Pago, crie uma aplicação para Checkout Pro e obtenha as credenciais de teste. Não coloque tokens no código, no navegador ou no repositório.
-2. Em homologação, configure `MERCADOPAGO_ACCESS_TOKEN` com o token de teste e `NEXT_PUBLIC_STORE_URL` com a URL pública da aplicação. Para testar localmente, use um túnel HTTPS para que o Mercado Pago consiga chamar o webhook.
-3. Configure a notificação de pagamentos para `https://SEU_DOMINIO/api/payments/mercadopago/webhook` e copie o segredo de assinatura gerado para `MERCADOPAGO_WEBHOOK_SECRET`. O endereço deve estar acessível publicamente por HTTPS.
-4. Teste o fluxo completo com as contas de teste do Mercado Pago: início do checkout, pagamento aprovado, pagamento pendente/recusado, retorno à página do pedido, reenvio de webhook e liberação de estoque após expiração. O token de teste iniciado por `TEST-` faz a aplicação preferir a URL de checkout sandbox.
-5. Após homologar, configure o token de produção e o segredo do webhook no ambiente de produção, ajuste `NEXT_PUBLIC_STORE_URL` para o domínio HTTPS definitivo e repita um teste controlado antes de divulgar a loja.
+1. No painel de desenvolvedores do Mercado Pago, obtenha a Public Key e o Access Token de teste da mesma aplicação. Não compartilhe o Access Token.
+2. Na Vercel, configure `NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY` com a Public Key de teste e `MERCADOPAGO_ACCESS_TOKEN` com o Access Token de teste. Configure-os no mesmo ambiente Vercel usado para o teste e mantenha `NEXT_PUBLIC_STORE_URL` apontando para a URL pública da loja.
+3. Configure a notificação de pagamentos para `https://SEU_DOMINIO/api/payments/mercadopago/webhook` e copie o segredo de assinatura dessa aplicação para `MERCADOPAGO_WEBHOOK_SECRET`. O endpoint deve estar acessível por HTTPS.
+4. Faça um novo deploy para que a Public Key `NEXT_PUBLIC_` seja incluída no frontend.
+5. Teste com as contas de teste do Mercado Pago: cartão, Pix, pagamentos pendentes/recusados, confirmação do webhook, reenvio de notificações e liberação de estoque após expiração.
+6. Após homologar, substitua no ambiente de produção a Public Key, o Access Token e o segredo do webhook pelos valores de produção correspondentes da mesma aplicação. Faça novo deploy e valide antes de divulgar a loja.
 
 Não habilite pagamentos reais até confirmar que o webhook atualiza o pedido e o estoque corretamente no ambiente publicado. A criação da aplicação e a emissão das credenciais acontecem na conta do Mercado Pago; não podem ser feitas apenas a partir deste repositório.
 
@@ -65,7 +67,8 @@ Não habilite pagamentos reais até confirmar que o webhook atualiza o pedido e 
 - `/` e `/produto/:id`: produtos ativos e disponíveis no banco.
 - `/sacola` e `/checkout`: sacola e início de checkout; ao informar um CEP válido, o endereço é preenchido pela consulta pública ViaCEP e o frete é cotado automaticamente. Entregas para CEPs que a ViaCEP identifica como Aracaju/SE recebem uma única opção grátis; o servidor confirma o CEP novamente ao criar o pedido, mesmo se `SHIPPING_QUOTE_SECRET` não estiver configurado. Nos demais destinos, o cliente pode revisar as opções do Melhor Envio, com cotação protegida pelo segredo; o servidor recalcula preços/estoque antes de iniciar o pagamento.
 - `POST /api/shipping/quote`: cotações do Melhor Envio assinadas e vinculadas ao CEP, variantes, quantidades e preços; expiram em 15 minutos. A cotação requer token OAuth válido, CEP de origem, e-mail de suporte e `SHIPPING_QUOTE_SECRET`.
-- `POST /api/orders`: valida pedido e frete, reserva estoque em transação e cria preferência Mercado Pago.
+- `POST /api/orders`: valida pedido e frete, reserva estoque em transação e prepara o Payment Brick.
+- `POST /api/orders/:code/payment`: cria a cobrança do Payment Brick no servidor com o valor calculado pelo banco.
 - `POST /api/payments/mercadopago/webhook`: valida assinatura, consulta o pagamento ao provedor e atualiza pedido/estoque.
 - `/pedido/:code` e `GET /api/orders/:code`: consulta limitada do estado do pedido.
 - `POST /api/cron/expire-orders`: cancela checkouts vencidos e libera reservas. Agende a chamada com `Authorization: Bearer <CRON_SECRET>`.
