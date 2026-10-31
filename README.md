@@ -48,6 +48,18 @@ Preencha no ambiente do servidor, nunca no frontend:
 
 Configure variáveis equivalentes na hospedagem. A chave `SUPABASE_SERVICE_ROLE_KEY` e todas as credenciais de pagamento/entrega são privadas e jamais devem usar prefixo `NEXT_PUBLIC_`.
 
+### Ativação do Checkout Pro
+
+O Checkout Pro é a opção recomendada para esta loja: o cliente escolhe Pix ou cartão na página segura do Mercado Pago, sem a Pietra receber dados de cartão. O servidor já cria uma preferência por pedido, reserva o estoque, redireciona o cliente e confirma o pagamento consultando o Mercado Pago após validar a assinatura do webhook.
+
+1. No painel de desenvolvedores do Mercado Pago, crie uma aplicação para Checkout Pro e obtenha as credenciais de teste. Não coloque tokens no código, no navegador ou no repositório.
+2. Em homologação, configure `MERCADOPAGO_ACCESS_TOKEN` com o token de teste e `NEXT_PUBLIC_STORE_URL` com a URL pública da aplicação. Para testar localmente, use um túnel HTTPS para que o Mercado Pago consiga chamar o webhook.
+3. Configure a notificação de pagamentos para `https://SEU_DOMINIO/api/payments/mercadopago/webhook` e copie o segredo de assinatura gerado para `MERCADOPAGO_WEBHOOK_SECRET`. O endereço deve estar acessível publicamente por HTTPS.
+4. Teste o fluxo completo com as contas de teste do Mercado Pago: início do checkout, pagamento aprovado, pagamento pendente/recusado, retorno à página do pedido, reenvio de webhook e liberação de estoque após expiração. O token de teste iniciado por `TEST-` faz a aplicação preferir a URL de checkout sandbox.
+5. Após homologar, configure o token de produção e o segredo do webhook no ambiente de produção, ajuste `NEXT_PUBLIC_STORE_URL` para o domínio HTTPS definitivo e repita um teste controlado antes de divulgar a loja.
+
+Não habilite pagamentos reais até confirmar que o webhook atualiza o pedido e o estoque corretamente no ambiente publicado. A criação da aplicação e a emissão das credenciais acontecem na conta do Mercado Pago; não podem ser feitas apenas a partir deste repositório.
+
 ## Fluxos implementados
 
 - `/` e `/produto/:id`: produtos ativos e disponíveis no banco.
