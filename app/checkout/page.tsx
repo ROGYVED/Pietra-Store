@@ -42,7 +42,6 @@ export default function CheckoutPage() {
   const [submittedOrder, setSubmittedOrder] = useState('');
   const [submittedTotalCents, setSubmittedTotalCents] = useState<number | null>(null);
   const [paymentStatus, setPaymentStatus] = useState('');
-  const [paymentSubmitted, setPaymentSubmitted] = useState(false);
   const [pickup, setPickup] = useState<PickupOption | null>(null);
   const quoteRequestId = useRef(0);
 
@@ -305,12 +304,8 @@ export default function CheckoutPage() {
                     orderCode={submittedOrder}
                     amountCents={submittedTotalCents}
                     email={customer.email}
-                    onPaymentResult={(status) => {
-                      setPaymentStatus(status);
-                      setPaymentSubmitted(true);
-                    }}
+                    onPaymentResult={setPaymentStatus}
                   />
-                  {paymentSubmitted && <p className="shipping-status" role="status">Pagamento enviado. Aguardando confirmação do Mercado Pago...</p>}
                 </>
               )}
               {orderWhatsApp && <a className="button button-outline" href={orderWhatsApp} target="_blank" rel="noreferrer"><MessageCircle size={16} /> Falar com a Pietra</a>}

@@ -25,10 +25,36 @@ const paymentSchema = z.object({
 type MercadoPagoPayment = {
   id?: number | string;
   status?: string;
+  status_detail?: string;
   transaction_amount?: number;
   currency_id?: string;
   payment_method_id?: string;
+  point_of_interaction?: {
+    transaction_data?: {
+      qr_code?: string;
+      qr_code_base64?: string;
+      ticket_url?: string;
+    };
+  };
+  transaction_details?: {
+    external_resource_url?: string;
+  };
 };
+
+function paymentInstructions(payment: MercadoPagoPayment) {
+  const transactionData = payment.point_of_interaction?.transaction_data;
+  return {
+    id: payment.id,
+    status: payment.status,
+    statusDetail: payment.status_detail,
+    paymentMethodId: payment.payment_method_id,
+    qrCode: transactionData?.qr_code ?? null,
+    qrCodeBase64: transactionData?.qr_code_base64 ?? null,
+    paymentUrl: transactionData?.ticket_url
+      ?? payment.transaction_details?.external_resource_url
+      ?? null,
+  };
+}
 
 export async function POST(request: Request, context: { params: Promise<{ code: string }> }) {
   const { code } = await context.params;
@@ -68,7 +94,8 @@ export async function POST(request: Request, context: { params: Promise<{ code: 
         signal: AbortSignal.timeout(12000),
       });
       if (existingResponse.ok) {
-        return NextResponse.json({ payment: await existingResponse.json() });
+        const existingPayment = await existingResponse.json() as MercadoPagoPayment;
+        return NextResponse.json({ payment: paymentInstructions(existingPayment) });
       }
       console.error('Mercado Pago existing payment lookup failed:', existingResponse.status);
       return NextResponse.json({ error: 'Não foi possível recuperar a tentativa de pagamento. Atualize o checkout.' }, { status: 502 });
@@ -145,7 +172,7 @@ export async function POST(request: Request, context: { params: Promise<{ code: 
       });
     });
 
-    return NextResponse.json({ payment: result });
+    return NextResponse.json({ payment: paymentInstructions(result) });
   } catch (error) {
     console.error('Order payment submission failed:', error);
     return NextResponse.json({ error: 'Não foi possível processar o pagamento. Tente novamente.' }, { status: 502 });

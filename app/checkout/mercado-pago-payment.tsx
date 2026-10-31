@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { loadMercadoPago } from '@mercadopago/sdk-js';
 
 type PaymentFormData = {
@@ -35,6 +36,15 @@ type PaymentBrickSettings = {
 };
 
 type PaymentBrickController = { unmount: () => void };
+type PaymentInstructions = {
+  id?: number | string;
+  status?: string;
+  statusDetail?: string;
+  paymentMethodId?: string;
+  qrCode?: string | null;
+  qrCodeBase64?: string | null;
+  paymentUrl?: string | null;
+};
 type MercadoPagoClient = {
   bricks: () => {
     create: (
@@ -69,6 +79,8 @@ export default function MercadoPagoPayment({
 }: MercadoPagoPaymentProps) {
   const [brickReady, setBrickReady] = useState(false);
   const [error, setError] = useState('');
+  const [paymentInstructions, setPaymentInstructions] = useState<PaymentInstructions | null>(null);
+  const [copied, setCopied] = useState(false);
   const paymentResultCallback = useRef(onPaymentResult);
 
   useEffect(() => {
@@ -132,6 +144,7 @@ export default function MercadoPagoPayment({
               if (!response.ok) {
                 throw new Error(result.error || 'Não foi possível processar o pagamento.');
               }
+              setPaymentInstructions(result.payment as PaymentInstructions);
               paymentResultCallback.current(result.payment.status);
               return result.payment;
             },
@@ -172,9 +185,56 @@ export default function MercadoPagoPayment({
 
   return (
     <div className="mercado-pago-brick">
+      {paymentInstructions?.qrCode ? (
+        <section className="checkout-success" aria-live="polite">
+          <h3>Pix gerado</h3>
+          <p>Escaneie o QR Code com o aplicativo do seu banco ou copie o código Pix abaixo.</p>
+          {paymentInstructions.qrCodeBase64 && (
+            <Image
+              src={`data:image/png;base64,${paymentInstructions.qrCodeBase64}`}
+              alt="QR Code Pix para pagamento do pedido"
+              width={240}
+              height={240}
+              unoptimized
+            />
+          )}
+          <label>
+            Pix copia e cola
+            <textarea readOnly value={paymentInstructions.qrCode} rows={4} />
+          </label>
+          <button
+            className="button button-dark"
+            type="button"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(paymentInstructions.qrCode ?? '');
+                setCopied(true);
+              } catch (reason) {
+                console.error('Could not copy Pix code:', reason);
+                setError('Não foi possível copiar o código automaticamente. Selecione e copie o código Pix manualmente.');
+              }
+            }}
+          >
+            {copied ? 'Código Pix copiado' : 'Copiar código Pix'}
+          </button>
+          <p>O pedido será confirmado automaticamente após a confirmação do pagamento.</p>
+        </section>
+      ) : paymentInstructions?.paymentUrl ? (
+        <section className="checkout-success" aria-live="polite">
+          <h3>Pagamento gerado</h3>
+          <p>Conclua o pagamento no link seguro abaixo. O pedido será atualizado após a confirmação.</p>
+          <a className="button button-dark" href={paymentInstructions.paymentUrl} target="_blank" rel="noreferrer">
+            Abrir instruções de pagamento
+          </a>
+        </section>
+      ) : paymentInstructions ? (
+        <p className="shipping-status" role="status">
+          Pagamento enviado. Aguardando confirmação do Mercado Pago...
+        </p>
+      ) : null}
       {!brickReady && !error && <p className="shipping-status" role="status">Carregando as formas de pagamento...</p>}
       {error && <p className="admin-warning" role="alert">{error}</p>}
-      <div id="paymentBrick_container" />
+      {!paymentInstructions && <div id="paymentBrick_container" />}
     </div>
   );
 }
