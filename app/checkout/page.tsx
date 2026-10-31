@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, CheckCircle2, LoaderCircle, MessageCircle, Truck } from 'lucide-react';
 
 type CartProduct = { id: string; name: string; price: number; image: string; tone: string; category: string };
@@ -28,6 +28,8 @@ export default function CheckoutPage() {
   const [quotes, setQuotes] = useState<ShippingQuote[]>([]);
   const [selectedQuote, setSelectedQuote] = useState('');
   const [quoteBusy, setQuoteBusy] = useState(false);
+  const [freightStatus, setFreightStatus] = useState('');
+  const [addressLookupStatus, setAddressLookupStatus] = useState('');
   const [submitBusy, setSubmitBusy] = useState(false);
   const [error, setError] = useState('');
   const [customer, setCustomer] = useState({ name: '', email: '', phone: '' });
@@ -35,6 +37,7 @@ export default function CheckoutPage() {
   const [idempotencyKey, setIdempotencyKey] = useState('');
   const [submittedOrder, setSubmittedOrder] = useState('');
   const [pickup, setPickup] = useState<PickupOption | null>(null);
+  const quoteRequestId = useRef(0);
 
   useEffect(() => {
     try {
@@ -64,20 +67,39 @@ export default function CheckoutPage() {
   const updateCustomer = (key: keyof typeof customer, value: string) =>
     setCustomer((current) => ({ ...current, [key]: value }));
   const updateAddress = (key: keyof typeof address, value: string) => {
+    if (key === 'cep') {
+      const digits = value.replace(/\D/g, '').slice(0, 8);
+      const formattedCep = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+      quoteRequestId.current += 1;
+      setQuotes([]);
+      setSelectedQuote('');
+      setQuoteBusy(false);
+      setFreightStatus('');
+      setError('');
+      setAddress((current) => ({
+        ...current,
+        cep: formattedCep,
+        street: '',
+        neighborhood: '',
+        city: '',
+        state: '',
+      }));
+      return;
+    }
     setAddress((current) => ({ ...current, [key]: value }));
-    setQuotes([]);
-    setSelectedQuote('');
   };
 
-  async function calculateFreight() {
+  const calculateFreight = useCallback(async (cep = address.cep) => {
+    const requestId = ++quoteRequestId.current;
     setError('');
     setQuotes([]);
     setSelectedQuote('');
-    const postalCode = address.cep.replace(/\D/g, '');
+    const postalCode = cep.replace(/\D/g, '');
     if (!/^\d{8}$/.test(postalCode)) {
-      setError('Informe um CEP válido com 8 dígitos.');
+      setFreightStatus('');
       return;
     }
+    setFreightStatus('Calculando as opções de frete...');
     setQuoteBusy(true);
     try {
       const response = await fetch('/api/shipping/quote', {
@@ -89,17 +111,78 @@ export default function CheckoutPage() {
         }),
       });
       const result = await response.json();
+      if (requestId !== quoteRequestId.current) return;
       if (!response.ok) throw new Error(result.error || 'Não foi possível calcular o frete.');
       const availableQuotes = result.quotes as ShippingQuote[];
       if (!availableQuotes.length) throw new Error('Nenhuma opção de frete foi encontrada para este CEP.');
       setQuotes(availableQuotes);
       setSelectedQuote(availableQuotes[0].token);
+      setFreightStatus('Frete calculado. Selecione a opção desejada.');
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Não foi possível calcular o frete.');
+      if (requestId === quoteRequestId.current) {
+        setFreightStatus('');
+        setError(reason instanceof Error ? reason.message : 'Não foi possível calcular o frete.');
+      }
     } finally {
-      setQuoteBusy(false);
+      if (requestId === quoteRequestId.current) setQuoteBusy(false);
     }
-  }
+  }, [address.cep, items]);
+
+  const postalCode = address.cep.replace(/\D/g, '');
+
+  useEffect(() => {
+    if (postalCode.length !== 8 || fulfillment !== 'NATIONAL_SHIPPING') {
+      setAddressLookupStatus('');
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(async () => {
+      setAddressLookupStatus('Buscando endereço pelo CEP...');
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${postalCode}/json/`, {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error('Não foi possível consultar o CEP.');
+        const result = await response.json() as {
+          logradouro?: string;
+          bairro?: string;
+          localidade?: string;
+          uf?: string;
+          erro?: boolean;
+        };
+        if (result.erro) {
+          setAddressLookupStatus('CEP não encontrado. Confira o número e preencha o endereço manualmente.');
+          return;
+        }
+        setAddress((current) => current.cep.replace(/\D/g, '') === postalCode
+          ? {
+              ...current,
+              street: result.logradouro || current.street,
+              neighborhood: result.bairro || current.neighborhood,
+              city: result.localidade || current.city,
+              state: result.uf || current.state,
+            }
+          : current);
+        setAddressLookupStatus('Endereço localizado. Confira o número e o complemento.');
+      } catch {
+        if (controller.signal.aborted) return;
+        setAddressLookupStatus('Não foi possível localizar o endereço automaticamente. Preencha os campos manualmente.');
+      }
+    }, 350);
+
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [fulfillment, postalCode]);
+
+  useEffect(() => {
+    if (!ready || fulfillment !== 'NATIONAL_SHIPPING' || postalCode.length !== 8 || !items.length) return;
+    const timeout = setTimeout(() => { void calculateFreight(address.cep); }, 500);
+    return () => clearTimeout(timeout);
+  }, [address.cep, calculateFreight, fulfillment, items.length, postalCode.length, ready]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -181,7 +264,7 @@ export default function CheckoutPage() {
               <h2>Como deseja receber?</h2>
               <div className="choice-stack">
                 <label><input type="radio" checked={fulfillment === 'NATIONAL_SHIPPING'} onChange={() => { setFulfillment('NATIONAL_SHIPPING'); setError(''); }} /> Envio nacional pelo Melhor Envio</label>
-                {pickup && <label><input type="radio" checked={fulfillment === 'PICKUP'} onChange={() => { setFulfillment('PICKUP'); setQuotes([]); setSelectedQuote(''); setError(''); }} /> Retirar na loja</label>}
+                {pickup && <label><input type="radio" checked={fulfillment === 'PICKUP'} onChange={() => { quoteRequestId.current += 1; setFulfillment('PICKUP'); setQuotes([]); setSelectedQuote(''); setQuoteBusy(false); setFreightStatus(''); setError(''); }} /> Retirar na loja</label>}
               </div>
               {pickup && fulfillment === 'PICKUP' && <p className="safe-note">{pickup.address}{pickup.instructions ? ` · ${pickup.instructions}` : ''}</p>}
 
@@ -197,9 +280,13 @@ export default function CheckoutPage() {
                     <label>Cidade<input required maxLength={120} value={address.city} onChange={(event) => updateAddress('city', event.target.value)} autoComplete="address-level2" /></label>
                     <label>UF<input required minLength={2} maxLength={2} value={address.state} onChange={(event) => updateAddress('state', event.target.value.toUpperCase())} autoComplete="address-level1" /></label>
                   </div>
-                  <button className="button button-outline" type="button" onClick={calculateFreight} disabled={quoteBusy}>
-                    {quoteBusy ? <LoaderCircle size={16} /> : <Truck size={16} />} Calcular frete
-                  </button>
+                  {addressLookupStatus && <p className="shipping-status" role="status">{addressLookupStatus}</p>}
+                  {freightStatus && <p className="shipping-status" role="status">{freightStatus}</p>}
+                  {postalCode.length === 8 && (
+                    <button className="button button-outline shipping-recalculate" type="button" onClick={() => void calculateFreight()} disabled={quoteBusy}>
+                      {quoteBusy ? <LoaderCircle size={16} /> : <Truck size={16} />} Recalcular frete
+                    </button>
+                  )}
                   {!!quotes.length && (
                     <div className="choice-stack">
                       {quotes.map((quote) => (

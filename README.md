@@ -39,7 +39,7 @@ No painel, use **Adicionar produto** para cadastrar mercadorias com SKU, preço,
 Preencha no ambiente do servidor, nunca no frontend:
 
 - `MERCADOPAGO_ACCESS_TOKEN` e `MERCADOPAGO_WEBHOOK_SECRET`: token e segredo de webhook da conta Mercado Pago. Configure `/api/payments/mercadopago/webhook` como notificação de pagamentos.
-- `MELHORENVIO_TOKEN`, `MELHORENVIO_ENV`, `MELHORENVIO_ORIGIN_POSTAL_CODE`, `MELHORENVIO_SERVICE_IDS` e `MELHORENVIO_SUPPORT_EMAIL`: acesso, ambiente, CEP de origem informado (`49055690`) e serviços autorizados no Melhor Envio. O token deve ser renovado conforme as regras da conta; rotação automática não está implementada.
+- `MELHORENVIO_TOKEN`, `MELHORENVIO_ENV`, `MELHORENVIO_ORIGIN_POSTAL_CODE`, `MELHORENVIO_SERVICE_IDS` e `MELHORENVIO_SUPPORT_EMAIL`: token OAuth da conta Pietra, ambiente (`sandbox` para testes ou `production`), CEP de origem cadastrado, IDs de serviços autorizados (opcional; vazio usa os serviços liberados na conta) e e-mail de suporte informado no User-Agent exigido pela API. O token deve ser emitido/autorizado na conta do Melhor Envio e renovado conforme as regras do provedor; rotação automática não está implementada.
 - `SHIPPING_QUOTE_SECRET`: segredo aleatório de 32 caracteres ou mais usado para assinar cotações temporárias.
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` e `SUPABASE_STORAGE_BUCKET`: armazenamento de imagens. O bucket deve estar configurado conforme o modo de acesso às imagens públicas da loja.
 - `NEXT_PUBLIC_STORE_URL`: URL pública usada nos retornos e notificações do Mercado Pago.
@@ -51,8 +51,8 @@ Configure variáveis equivalentes na hospedagem. A chave `SUPABASE_SERVICE_ROLE_
 ## Fluxos implementados
 
 - `/` e `/produto/:id`: produtos ativos e disponíveis no banco.
-- `/sacola` e `/checkout`: sacola e início de checkout; o servidor recalcula preços/estoque e redireciona ao Mercado Pago.
-- `POST /api/shipping/quote`: cotações do Melhor Envio assinadas e vinculadas ao CEP, variantes, quantidades e preços; expiram em 15 minutos.
+- `/sacola` e `/checkout`: sacola e início de checkout; ao informar um CEP válido, o endereço é preenchido pela consulta pública ViaCEP e o frete é cotado automaticamente. O cliente pode revisar as opções e o servidor recalcula preços/estoque antes de iniciar o pagamento.
+- `POST /api/shipping/quote`: cotações do Melhor Envio assinadas e vinculadas ao CEP, variantes, quantidades e preços; expiram em 15 minutos. A cotação requer token OAuth válido, CEP de origem, e-mail de suporte e `SHIPPING_QUOTE_SECRET`.
 - `POST /api/orders`: valida pedido e frete, reserva estoque em transação e cria preferência Mercado Pago.
 - `POST /api/payments/mercadopago/webhook`: valida assinatura, consulta o pagamento ao provedor e atualiza pedido/estoque.
 - `/pedido/:code` e `GET /api/orders/:code`: consulta limitada do estado do pedido.
