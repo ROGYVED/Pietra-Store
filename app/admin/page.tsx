@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ImagePlus, LogOut, PackageSearch, Plus, RefreshCw, Search, Save, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, ImagePlus, LogOut, PackageSearch, Plus, RefreshCw, Search, Save, Trash2, X } from 'lucide-react';
 import AdminAnalytics from './analytics';
 import './admin.css';
 
@@ -383,6 +383,37 @@ export default function AdminPage() {
     }
   }
 
+  async function bulkProductStatus(status: 'ACTIVE' | 'DRAFT') {
+    const publish = status === 'ACTIVE';
+    const confirmed = window.confirm(publish
+      ? 'Publicar todos os produtos com estoque disponível? Produtos arquivados e sem estoque serão ignorados.'
+      : 'Retirar todos os produtos publicados da loja? Eles continuarão cadastrados no painel e no histórico.');
+    if (!confirmed) return;
+
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const response = await fetch('/api/admin/products/bulk-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      const result = await response.json() as { affectedCount?: number; eligibleCount?: number; error?: string };
+      if (!response.ok) throw new Error(result.error || 'Não foi possível atualizar o catálogo.');
+      await loadProducts();
+      if (publish) {
+        setNotice(`${result.affectedCount ?? 0} produto(s) novo(s) publicado(s). ${result.eligibleCount ?? 0} produto(s) têm estoque disponível; produtos arquivados ou sem estoque foram ignorados.`);
+      } else {
+        setNotice(`${result.affectedCount ?? 0} produto(s) retirado(s) da loja. Os cadastros e históricos foram preservados.`);
+      }
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Não foi possível atualizar o catálogo.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function importImage(product: AdminProduct) {
     const sourceUrl = product.images[0]?.url;
     if (!sourceUrl) {
@@ -537,6 +568,14 @@ export default function AdminPage() {
                     <Plus size={16} /> Adicionar produto
                   </button>
                 </div>
+              </div>
+              <div className="catalog-bulk-actions">
+                <button type="button" className="catalog-bulk-publish" onClick={() => void bulkProductStatus('ACTIVE')} disabled={busy || !products.length}>
+                  <Eye size={15} /> {busy ? 'Atualizando...' : 'Publicar todos com estoque'}
+                </button>
+                <button type="button" className="catalog-bulk-unpublish" onClick={() => void bulkProductStatus('DRAFT')} disabled={busy}>
+                  <EyeOff size={15} /> {busy ? 'Atualizando...' : 'Retirar todos da loja'}
+                </button>
               </div>
               {showNewProductForm && (
                 <form className="admin-form admin-new-product-form" onSubmit={createProduct}>

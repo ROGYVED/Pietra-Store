@@ -72,7 +72,7 @@ Não habilite pagamentos reais até confirmar que o webhook atualiza o pedido e 
 - `POST /api/payments/mercadopago/webhook`: valida assinatura, consulta o pagamento ao provedor e atualiza pedido/estoque.
 - `/pedido/:code` e `GET /api/orders/:code`: consulta limitada do estado do pedido.
 - `POST /api/cron/expire-orders`: cancela checkouts vencidos e libera reservas. Agende a chamada com `Authorization: Bearer <CRON_SECRET>`.
-- `/admin`: painel com faturamento pago, pedidos pendentes, ticket médio, custos registrados, taxas do Mercado Pago recebidas no webhook, resultado estimado, evolução diária, mais vendidos, estoque baixo, consulta paginada de cada venda, pesquisa e exportação CSV da página; também inclui gestão de estoque, publicação, medidas, retirada e imagens.
+- `/admin`: painel com faturamento pago, pedidos pendentes, ticket médio, custos registrados, taxas do Mercado Pago recebidas no webhook, resultado estimado, evolução diária, mais vendidos, estoque baixo, consulta paginada de cada venda, pesquisa e exportação CSV da página; também inclui gestão de estoque, publicação individual ou em lote (somente produtos com estoque disponível), retirada individual ou em lote, medidas, retirada na loja e imagens.
 - `GET /api/admin/analytics?period=7d|30d|90d|all` e `GET /api/admin/orders?page=1&pageSize=25`: relatórios autenticados do painel.
 - `PATCH /api/admin/orders/:id`: atualização operacional e cancelamento autenticado de pedidos pendentes; cancelar libera estoque e preserva o histórico.
 - `POST /api/admin/orders/cancel-pending`: cancela em lotes todos os pedidos que aguardam pagamento, mesmo fora do período/página atual, com autenticação administrativa.
