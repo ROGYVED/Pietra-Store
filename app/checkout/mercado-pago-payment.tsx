@@ -1,7 +1,56 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
+import { useEffect, useRef, useState } from 'react';
+import { loadMercadoPago } from '@mercadopago/sdk-js';
+
+type PaymentFormData = {
+  formData: Record<string, unknown>;
+};
+
+type BrickError = {
+  type?: string;
+  cause?: string;
+  message?: string;
+};
+
+type PaymentBrickSettings = {
+  initialization: {
+    amount: number;
+    payer: { email: string };
+  };
+  customization: {
+    paymentMethods: {
+      creditCard: 'all';
+      debitCard: 'all';
+      prepaidCard: 'all';
+      ticket: 'all';
+      bankTransfer: 'all';
+    };
+  };
+  callbacks: {
+    onReady: () => void;
+    onError: (error: BrickError) => void;
+    onSubmit: (data: PaymentFormData) => Promise<unknown>;
+  };
+};
+
+type PaymentBrickController = { unmount: () => void };
+type MercadoPagoClient = {
+  bricks: () => {
+    create: (
+      name: 'payment',
+      containerId: string,
+      settings: PaymentBrickSettings,
+    ) => Promise<PaymentBrickController>;
+  };
+};
+type MercadoPagoConstructor = new (publicKey: string, options: { locale: string }) => MercadoPagoClient;
+
+declare global {
+  interface Window {
+    MercadoPago?: MercadoPagoConstructor;
+  }
+}
 
 type MercadoPagoPaymentProps = {
   orderCode: string;
@@ -18,70 +67,114 @@ export default function MercadoPagoPayment({
   email,
   onPaymentResult,
 }: MercadoPagoPaymentProps) {
-  const [initialized, setInitialized] = useState(false);
   const [brickReady, setBrickReady] = useState(false);
   const [error, setError] = useState('');
+  const paymentResultCallback = useRef(onPaymentResult);
+
+  useEffect(() => {
+    paymentResultCallback.current = onPaymentResult;
+  }, [onPaymentResult]);
 
   useEffect(() => {
     if (!publicKey) return;
-    initMercadoPago(publicKey, { locale: 'pt-BR' });
-    setInitialized(true);
-  }, []);
-
-  useEffect(() => {
-    if (!initialized || brickReady || error) return;
+    let active = true;
+    let controller: PaymentBrickController | undefined;
     const timeout = setTimeout(() => {
-      setError('O formulário do Mercado Pago demorou para carregar. Atualize a página e tente novamente.');
+      if (active) {
+        setError('O formulário do Mercado Pago demorou para carregar. Verifique a Public Key e as permissões do domínio da loja.');
+      }
     }, 20000);
-    return () => clearTimeout(timeout);
-  }, [brickReady, error, initialized]);
+
+    const renderPaymentBrick = async () => {
+      try {
+        await loadMercadoPago();
+        if (!active) return;
+        if (!window.MercadoPago) throw new Error('SDK Mercado Pago não foi carregado no navegador.');
+
+        const mercadoPago = new window.MercadoPago(publicKey, { locale: 'pt-BR' });
+        const instance = await mercadoPago.bricks().create('payment', 'paymentBrick_container', {
+          initialization: { amount: amountCents / 100, payer: { email } },
+          customization: {
+            paymentMethods: {
+              creditCard: 'all',
+              debitCard: 'all',
+              prepaidCard: 'all',
+              ticket: 'all',
+              bankTransfer: 'all',
+            },
+          },
+          callbacks: {
+            onReady: () => {
+              if (active) {
+                clearTimeout(timeout);
+                setError('');
+                setBrickReady(true);
+              }
+            },
+            onError: (brickError) => {
+              console.error('Mercado Pago Payment Brick failed:', brickError);
+              if (active) {
+                clearTimeout(timeout);
+                const detail = brickError.message || brickError.cause || '';
+                setError([
+                  'O Mercado Pago não conseguiu carregar as formas de pagamento.',
+                  detail.slice(0, 180),
+                ].filter(Boolean).join(' '));
+              }
+            },
+            onSubmit: async ({ formData }) => {
+              const response = await fetch(`/api/orders/${encodeURIComponent(orderCode)}/payment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ formData }),
+              });
+              const result = await response.json();
+              if (!response.ok) {
+                throw new Error(result.error || 'Não foi possível processar o pagamento.');
+              }
+              paymentResultCallback.current(result.payment.status);
+              return result.payment;
+            },
+          },
+        });
+
+        if (!active) {
+          instance.unmount();
+          return;
+        }
+        controller = instance;
+      } catch (reason) {
+        console.error('Could not render Mercado Pago Payment Brick:', reason);
+        if (active) {
+          clearTimeout(timeout);
+          const detail = reason instanceof Error ? reason.message : '';
+          setError([
+            'Não foi possível carregar o pagamento.',
+            detail.slice(0, 180),
+            'Confirme se a Public Key é de teste e pertence à mesma aplicação do Access Token.',
+          ].filter(Boolean).join(' '));
+        }
+      }
+    };
+
+    void renderPaymentBrick();
+
+    return () => {
+      active = false;
+      clearTimeout(timeout);
+      controller?.unmount();
+    };
+  }, [amountCents, email, orderCode]);
 
   if (!publicKey) {
     return <p className="admin-warning" role="alert">Pagamento indisponível: configure a Public Key do Mercado Pago na Vercel.</p>;
   }
-  if (!initialized) return <p className="shipping-status" role="status">Carregando pagamento seguro...</p>;
 
   return (
     <div className="mercado-pago-brick">
       {!brickReady && !error && <p className="shipping-status" role="status">Carregando as formas de pagamento...</p>}
       {error && <p className="admin-warning" role="alert">{error}</p>}
-      <Payment
-        initialization={{ amount: amountCents / 100, payer: { email } }}
-        customization={{
-          paymentMethods: {
-            creditCard: 'all',
-            debitCard: 'all',
-            prepaidCard: 'all',
-            ticket: 'all',
-            bankTransfer: 'all',
-          },
-        }}
-        onReady={() => setBrickReady(true)}
-        onSubmit={async ({ formData }) => {
-          setError('');
-          const response = await fetch(`/api/orders/${encodeURIComponent(orderCode)}/payment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ formData }),
-          });
-          const result = await response.json();
-          if (!response.ok) {
-            const message = result.error || 'Não foi possível processar o pagamento.';
-            setError(message);
-            throw new Error(message);
-          }
-          onPaymentResult(result.payment.status);
-          return result.payment;
-        }}
-        onError={(brickError) => {
-          console.error('Mercado Pago Payment Brick failed:', {
-            type: brickError.type,
-            cause: brickError.cause,
-            message: brickError.message,
-          });
-          setError('O formulário de pagamento apresentou um erro. Confira a configuração da Public Key e tente novamente.');
-        }}
-      />
+      <div id="paymentBrick_container" />
     </div>
   );
 }
