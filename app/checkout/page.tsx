@@ -12,6 +12,7 @@ type ShippingQuote = {
   serviceName: string;
   priceCents: number;
   deliveryDays: number;
+  freeShipping?: boolean;
 };
 type PickupOption = { address: string; instructions: string | null };
 type Fulfillment = 'NATIONAL_SHIPPING' | 'PICKUP';
@@ -117,7 +118,9 @@ export default function CheckoutPage() {
       if (!availableQuotes.length) throw new Error('Nenhuma opção de frete foi encontrada para este CEP.');
       setQuotes(availableQuotes);
       setSelectedQuote(availableQuotes[0].token);
-      setFreightStatus('Frete calculado. Selecione a opção desejada.');
+      setFreightStatus(availableQuotes[0].freeShipping
+        ? 'Entrega grátis disponível para este CEP em Aracaju/SE.'
+        : 'Frete calculado. Selecione a opção desejada.');
     } catch (reason) {
       if (requestId === quoteRequestId.current) {
         setFreightStatus('');
@@ -292,7 +295,7 @@ export default function CheckoutPage() {
                       {quotes.map((quote) => (
                         <label key={quote.token}>
                           <input type="radio" name="shippingQuote" checked={selectedQuote === quote.token} onChange={() => setSelectedQuote(quote.token)} />
-                          {quote.serviceName} · {money(quote.priceCents)} · até {quote.deliveryDays} dias
+                          {quote.serviceName} · {money(quote.priceCents)}{quote.deliveryDays > 0 ? ` · até ${quote.deliveryDays} dias` : ''}
                         </label>
                       ))}
                     </div>
@@ -317,7 +320,7 @@ export default function CheckoutPage() {
                 </div>
               ))}
               <div><span>Subtotal estimado</span><strong>{money(subtotalCents)}</strong></div>
-              <div><span>Entrega</span><strong>{fulfillment === 'PICKUP' ? 'Grátis' : chosenQuote ? money(chosenQuote.priceCents) : 'Calcule o frete'}</strong></div>
+              <div><span>Entrega</span><strong>{fulfillment === 'PICKUP' || chosenQuote?.freeShipping ? 'Grátis' : chosenQuote ? money(chosenQuote.priceCents) : 'Calcule o frete'}</strong></div>
               <div className="summary-total"><span>Total estimado</span><strong>{money(totalCents)}</strong></div>
               <p className="safe-note">O servidor confirma preço e estoque antes de criar a cobrança.</p>
             </aside>

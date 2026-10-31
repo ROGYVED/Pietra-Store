@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { hashShippingItems, signShippingQuote } from '@/lib/shipping';
+import { hashShippingItems, isAracajuShippingAddress, signShippingQuote } from '@/lib/shipping';
 
 const schema = z.object({
   postalCode: z.string().regex(/^\d{8}$/),
@@ -29,11 +29,8 @@ export async function POST(request: Request) {
   const originPostalCode = process.env.MELHORENVIO_ORIGIN_POSTAL_CODE?.replace(/\D/g, '');
   const supportEmail = process.env.MELHORENVIO_SUPPORT_EMAIL;
   const quoteSecret = process.env.SHIPPING_QUOTE_SECRET;
-  if (!token || !originPostalCode || !supportEmail || !quoteSecret || quoteSecret.length < 32) {
-    return NextResponse.json({ error: 'Configure o token OAuth, CEP de origem, e-mail de suporte e segredo das cotações do Melhor Envio.' }, { status: 503 });
-  }
-  if (originPostalCode.length !== 8) {
-    return NextResponse.json({ error: 'O CEP de origem do Melhor Envio precisa conter 8 dígitos.' }, { status: 503 });
+  if (!quoteSecret || quoteSecret.length < 32) {
+    return NextResponse.json({ error: 'Configure SHIPPING_QUOTE_SECRET com pelo menos 32 caracteres.' }, { status: 503 });
   }
 
   const variantIds = parsed.data.items.map((item) => item.variantId);
@@ -42,7 +39,6 @@ export async function POST(request: Request) {
     include: { product: true },
   });
   const byId = new Map(variants.map((variant) => [variant.id, variant]));
-  const products = [];
 
   for (const item of parsed.data.items) {
     const variant = byId.get(item.variantId);
@@ -50,6 +46,52 @@ export async function POST(request: Request) {
     if (variant.stockQuantity - variant.reservedQuantity < item.quantity) {
       return NextResponse.json({ error: `Estoque insuficiente para ${variant.product.name}.` }, { status: 409 });
     }
+  }
+
+  const itemsHash = hashShippingItems(parsed.data.items.map((item) => ({
+    ...item,
+    unitPriceCents: byId.get(item.variantId)?.product.priceCents ?? 0,
+  })), parsed.data.postalCode);
+
+  try {
+    const addressResponse = await fetch(`https://viacep.com.br/ws/${parsed.data.postalCode}/json/`, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!addressResponse.ok) throw new Error(`ViaCEP returned ${addressResponse.status}`);
+    const address = await addressResponse.json() as { localidade?: string; uf?: string; erro?: boolean };
+    if (address.erro) {
+      return NextResponse.json({ error: 'CEP não encontrado. Confira o endereço e tente novamente.' }, { status: 400 });
+    }
+
+    if (isAracajuShippingAddress(address.localidade, address.uf)) {
+      const claims = {
+        serviceId: 'PIETRA_ARACAJU_FREE',
+        serviceName: 'Entrega grátis em Aracaju/SE',
+        priceCents: 0,
+        deliveryDays: 0,
+        postalCode: parsed.data.postalCode,
+        itemsHash,
+        freeShipping: true,
+      };
+      return NextResponse.json({ quotes: [{ ...claims, token: await signShippingQuote(claims) }] });
+    }
+  } catch (error) {
+    console.error('CEP location lookup failed:', error);
+    return NextResponse.json({ error: 'Não foi possível confirmar a cidade deste CEP. Tente novamente.' }, { status: 502 });
+  }
+
+  if (!token || !originPostalCode || !supportEmail) {
+    return NextResponse.json({ error: 'Configure o token OAuth, CEP de origem e e-mail de suporte do Melhor Envio.' }, { status: 503 });
+  }
+  if (originPostalCode.length !== 8) {
+    return NextResponse.json({ error: 'O CEP de origem do Melhor Envio precisa conter 8 dígitos.' }, { status: 503 });
+  }
+
+  const products = [];
+  for (const item of parsed.data.items) {
+    const variant = byId.get(item.variantId);
+    if (!variant) return NextResponse.json({ error: 'Um produto não está mais disponível.' }, { status: 409 });
     const { widthCm, heightCm, lengthCm, weightGrams } = variant.product;
     if (widthCm < 1 || heightCm < 1 || lengthCm < 1 || weightGrams < 1) {
       return NextResponse.json({ error: `Cadastre peso e dimensões de envio para ${variant.product.name}.` }, { status: 400 });
@@ -97,10 +139,6 @@ export async function POST(request: Request) {
     if (!Array.isArray(rates)) {
       return NextResponse.json({ error: 'Resposta inválida recebida do Melhor Envio.' }, { status: 502 });
     }
-    const itemsHash = hashShippingItems(parsed.data.items.map((item) => ({
-      ...item,
-      unitPriceCents: byId.get(item.variantId)?.product.priceCents ?? 0,
-    })), parsed.data.postalCode);
     const quotes = [];
     for (const rate of rates) {
       if (rate.error || rate.id === undefined || !rate.name) continue;

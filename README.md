@@ -51,7 +51,7 @@ Configure variáveis equivalentes na hospedagem. A chave `SUPABASE_SERVICE_ROLE_
 ## Fluxos implementados
 
 - `/` e `/produto/:id`: produtos ativos e disponíveis no banco.
-- `/sacola` e `/checkout`: sacola e início de checkout; ao informar um CEP válido, o endereço é preenchido pela consulta pública ViaCEP e o frete é cotado automaticamente. O cliente pode revisar as opções e o servidor recalcula preços/estoque antes de iniciar o pagamento.
+- `/sacola` e `/checkout`: sacola e início de checkout; ao informar um CEP válido, o endereço é preenchido pela consulta pública ViaCEP e o frete é cotado automaticamente. Entregas para CEPs que a ViaCEP identifica como Aracaju/SE recebem uma única opção grátis, validada também no servidor pelo token de cotação assinado. Nos demais destinos, o cliente pode revisar as opções do Melhor Envio; o servidor recalcula preços/estoque antes de iniciar o pagamento.
 - `POST /api/shipping/quote`: cotações do Melhor Envio assinadas e vinculadas ao CEP, variantes, quantidades e preços; expiram em 15 minutos. A cotação requer token OAuth válido, CEP de origem, e-mail de suporte e `SHIPPING_QUOTE_SECRET`.
 - `POST /api/orders`: valida pedido e frete, reserva estoque em transação e cria preferência Mercado Pago.
 - `POST /api/payments/mercadopago/webhook`: valida assinatura, consulta o pagamento ao provedor e atualiza pedido/estoque.

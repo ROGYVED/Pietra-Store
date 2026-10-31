@@ -8,6 +8,7 @@ export type ShippingQuoteClaims = {
   deliveryDays: number;
   postalCode: string;
   itemsHash: string;
+  freeShipping?: boolean;
 };
 
 export type ShippingQuoteItem = {
@@ -15,6 +16,15 @@ export type ShippingQuoteItem = {
   quantity: number;
   unitPriceCents: number;
 };
+
+export function isAracajuShippingAddress(city: string | null | undefined, state: string | null | undefined) {
+  const normalizedCity = (city ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLocaleUpperCase('pt-BR');
+  return normalizedCity === 'ARACAJU' && state?.trim().toUpperCase() === 'SE';
+}
 
 function quoteSecret() {
   const value = process.env.SHIPPING_QUOTE_SECRET;
@@ -48,7 +58,8 @@ export async function verifyShippingQuote(token: string) {
     typeof payload.priceCents !== 'number' ||
     typeof payload.deliveryDays !== 'number' ||
     typeof payload.postalCode !== 'string' ||
-    typeof payload.itemsHash !== 'string'
+    typeof payload.itemsHash !== 'string' ||
+    (payload.freeShipping !== undefined && typeof payload.freeShipping !== 'boolean')
   ) {
     throw new Error('Cotação de frete inválida.');
   }
@@ -59,5 +70,6 @@ export async function verifyShippingQuote(token: string) {
     deliveryDays: payload.deliveryDays,
     postalCode: payload.postalCode,
     itemsHash: payload.itemsHash,
+    freeShipping: payload.freeShipping === true,
   };
 }

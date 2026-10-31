@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { createMercadoPagoPreference } from '@/lib/mercado-pago';
-import { hashShippingItems, verifyShippingQuote } from '@/lib/shipping';
+import { hashShippingItems, isAracajuShippingAddress, verifyShippingQuote } from '@/lib/shipping';
 
 const schema = z.object({
   customer: z.object({
@@ -112,7 +112,12 @@ export async function POST(request: Request) {
       if (
         quote.postalCode !== postalCode ||
         quote.itemsHash !== hashShippingItems(shippingQuoteItems, postalCode) ||
-        shippingQuoteItems.some((item) => item.unitPriceCents < 0)
+        shippingQuoteItems.some((item) => item.unitPriceCents < 0) ||
+        (quote.freeShipping && (
+          quote.serviceId !== 'PIETRA_ARACAJU_FREE' ||
+          quote.priceCents !== 0 ||
+          !isAracajuShippingAddress(data.address.city, data.address.state)
+        ))
       ) {
         return NextResponse.json({ error: 'O frete não corresponde ao CEP ou aos itens atuais. Calcule-o novamente.' }, { status: 409 });
       }
