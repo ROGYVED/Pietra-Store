@@ -71,9 +71,20 @@ export async function createMercadoPagoPreference(
     id?: string;
     init_point?: string;
     sandbox_init_point?: string;
+    error?: string;
+    message?: string;
+    cause?: { code?: string | number; description?: string }[];
   } | null;
   if (!response.ok || !result?.id || !result.init_point) {
-    console.error('Mercado Pago preference creation failed:', response.status);
+    console.error('Mercado Pago preference creation failed:', {
+      status: response.status,
+      error: result?.error,
+      message: result?.message,
+      causes: result?.cause?.slice(0, 5).map(({ code, description }) => ({
+        code,
+        description: description?.slice(0, 200),
+      })),
+    });
     throw new Error('Não foi possível iniciar o pagamento no Mercado Pago.');
   }
   return {
