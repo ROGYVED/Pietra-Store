@@ -1,0 +1,27 @@
+.pix-copy-section {
+  width: min(100%, 520px);
+  margin: 20px auto;
+  text-align: left;
+}
+
+.pix-copy-label {
+  margin: 0 0 8px;
+  color: #075ac8;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pix-copy-code {
+  margin: 0;
+  color: #1769d2;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.pix-copy-code:focus-visible {
+  outline: 2px solid #1769d2;
+  outline-offset: 4px;
+}

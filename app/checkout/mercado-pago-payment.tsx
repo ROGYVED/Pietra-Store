@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { loadMercadoPago } from '@mercadopago/sdk-js';
+import './mercado-pago-payment.css';
 
 type PaymentFormData = {
   formData: Record<string, unknown>;
@@ -198,10 +199,12 @@ export default function MercadoPagoPayment({
               unoptimized
             />
           )}
-          <label>
-            Pix copia e cola
-            <textarea readOnly value={paymentInstructions.qrCode} rows={4} />
-          </label>
+          <div className="pix-copy-section">
+            <p className="pix-copy-label">Pix copia e cola</p>
+            <p className="pix-copy-code" tabIndex={0} aria-label="Código Pix copia e cola">
+              {paymentInstructions.qrCode}
+            </p>
+          </div>
           <button
             className="button button-dark"
             type="button"
